@@ -382,6 +382,9 @@
     try {
       const res = await fetch(url);
       const data = await res.json();
+      console.log('res.ok:', res.ok);
+      console.log('data:', JSON.stringify(data));
+      console.log('records length:', data.records ? data.records.length : 'no records');
 
       if (!res.ok || !data.records || data.records.length === 0) {
         setPlacaError('No se encontró ingreso abierto para esta placa');
