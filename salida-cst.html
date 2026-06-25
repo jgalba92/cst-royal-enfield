@@ -477,8 +477,8 @@
       fields['Upsell cerrado'] = cerroUpsell === 'Sí';
 
       if (cerroUpsell === 'Sí') {
-        const valorUpsell = parseFloat(document.getElementById('valorUpsell').value);
-        if (valorUpsell > 0) fields['Ítem upsell'] = valorUpsell;
+        const valorUpsell = document.getElementById('valorUpsell').value.trim();
+        if (valorUpsell) fields['Ítem upsell'] = valorUpsell;
       }
     }
 
