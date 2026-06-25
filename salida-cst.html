@@ -383,12 +383,12 @@
       const res = await fetch(url);
       const data = await res.json();
 
-      if (!res.ok || !data.found) {
+      if (!res.ok || !data.records || data.records.length === 0) {
         setPlacaError('No se encontró ingreso abierto para esta placa');
         return;
       }
 
-      const f = data.fields;
+      const f = data.records[0].fields;
       const map = {
         'info-tipoCliente':    f['Tipo cliente']     || '—',
         'info-tipoServicio':   Array.isArray(f['Tipo servicio']) ? f['Tipo servicio'].join(', ') : (f['Tipo servicio'] || '—'),
