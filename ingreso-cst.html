@@ -463,17 +463,18 @@
 
     const fields = {
       'Placa': placa,
-      'Timestamp ingreso': fechaIngreso,
       'Ingresando ahora': ingresandoAhora,
       'Tipo cliente': document.getElementById('tipoCliente').value,
       'Origen': document.getElementById('origen').value,
       'Tipo servicio': serviciosSeleccionados.join(', '),
       'Complejidad': document.getElementById('complejidad').value,
-      'Valor estimado': parseFloat(document.getElementById('valorEstimado').value) || 0,
       'Técnico asignado': document.getElementById('tecnicoAsignado').value,
       'Quién registra': document.getElementById('quienRegistra').value,
       'Comentarios ingreso': document.getElementById('comentariosIngreso').value,
     };
+
+    const valorEstimado = parseFloat(document.getElementById('valorEstimado').value);
+    if (valorEstimado > 0) fields['Valor estimado'] = valorEstimado;
 
     const accesoriosChecked = document.querySelector('input[value="Accesorios"]').checked;
     if (accesoriosChecked) {
