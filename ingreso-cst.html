@@ -492,16 +492,13 @@
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tableId: 'tblVfL0uCihLTIQ9l',
-          fields: fields
-        })
+        body: JSON.stringify({ tableId: 'tblVfL0uCihLTIQ9l', fields: fields })
       });
 
-      const responseData = await res.json();
-      console.log('Worker response:', JSON.stringify(responseData));
+      const responseText = await res.text();
+      console.log('Status:', res.status, 'Response:', responseText);
 
-      if (!res.ok) throw new Error('Error Airtable');
+      if (!res.ok) throw new Error('Error: ' + responseText);
 
       showToast('Ingreso registrado correctamente');
       document.getElementById('ingresoForm').reset();
