@@ -600,8 +600,8 @@
       const raw = await res.json();
       console.log('Dashboard raw:', JSON.stringify(raw));
 
-      const ingresoRecords = (raw.ingreso || []).map(r => r.fields || r);
-      const salidaRecords  = (raw.salida  || []).map(r => r.fields || r);
+      const ingresoRecords = (raw.ingreso?.records || []).map(r => r.fields);
+      const salidaRecords  = (raw.salida?.records  || []).map(r => r.fields);
 
       const data = calcularDatos(ingresoRecords, salidaRecords, filters);
       dashboardData = data;
