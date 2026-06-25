@@ -288,9 +288,15 @@
       const data = await res.json();
       const salidas = data.salida?.records || [];
       const ingresos = data.ingreso?.records || [];
+      const ahora = new Date();
 
-      const placasConSalida = new Set(salidas.map(s => s.fields['Placa']));
-      const motosEnTaller = ingresos.filter(r => !placasConSalida.has(r.fields['Placa']));
+      const placasConSalida = new Set(salidas.map(s => (s.fields['Placa'] || '').toUpperCase()).filter(Boolean));
+      const motosEnTaller = ingresos.filter(r => !placasConSalida.has((r.fields['Placa'] || '').toUpperCase()));
+
+      const pendientesMas24h = motosEnTaller.filter(r => {
+        const ts = r.fields['Timestamp ingreso'];
+        return ts && (ahora - new Date(ts)) > 86400000;
+      });
 
       const tecnicoCount = {};
       ingresos.forEach(r => {
@@ -298,37 +304,66 @@
         if (t) tecnicoCount[t] = (tecnicoCount[t] || 0) + 1;
       });
 
-      const entregasRetrasadas = salidas.filter(s => s.fields['Entrega'] === 'Retrasada').length;
+      const facturacionPorTecnico = {};
+      salidas.forEach(s => {
+        const t = s.fields['Técnico entrega'];
+        const v = s.fields['Valor final'] || 0;
+        if (t) facturacionPorTecnico[t] = (facturacionPorTecnico[t] || 0) + v;
+      });
+
+      const ingresoByPlaca = {};
+      ingresos.forEach(r => { if (r.fields['Placa']) ingresoByPlaca[(r.fields['Placa'] || '').toUpperCase()] = r; });
+
+      const retrasosPorTecnico = {};
+      salidas.filter(s => s.fields['Entrega'] === 'Retrasada').forEach(s => {
+        const ing = ingresoByPlaca[(s.fields['Placa'] || '').toUpperCase()];
+        const t = ing?.fields['Técnico asignado'] || s.fields['Técnico entrega'];
+        if (t) retrasosPorTecnico[t] = (retrasosPorTecnico[t] || 0) + 1;
+      });
+
+      const servicioCount = {};
+      ingresos.forEach(r => {
+        const tipos = Array.isArray(r.fields['Tipo servicio']) ? r.fields['Tipo servicio'] : [r.fields['Tipo servicio']].filter(Boolean);
+        tipos.forEach(t => { if (t) servicioCount[t] = (servicioCount[t] || 0) + 1; });
+      });
+      const serviciosSorted = Object.entries(servicioCount).sort((a, b) => b[1] - a[1]).map(([servicio, cantidad]) => ({ servicio, cantidad }));
+
+      const origenCount = {};
+      ingresos.forEach(r => { const o = r.fields['Origen']; if (o) origenCount[o] = (origenCount[o] || 0) + 1; });
+
+      const valorFacturado = salidas.reduce((s, r) => s + (r.fields['Valor final'] || 0), 0);
+      const salidaConValor = salidas.filter(r => r.fields['Valor final'] > 0);
+      const ticketPromedio = salidaConValor.length ? Math.round(valorFacturado / salidaConValor.length) : 0;
       const entregasATiempo = salidas.filter(s => s.fields['Entrega'] === 'A tiempo').length;
+      const entregasRetrasadas = salidas.filter(s => s.fields['Entrega'] === 'Retrasada').length;
+      const upsellsCerrados = salidas.filter(s => s.fields['Upsell cerrado'] === true).length;
+      const tasaEntrega = salidas.length ? Math.round(entregasATiempo * 100 / salidas.length) + '%' : '0%';
+      const tasaUpsell = salidas.length ? Math.round(upsellsCerrados * 100 / salidas.length) + '%' : '0%';
 
       tallerContext = {
         total_ingresos: ingresos.length,
         total_salidas: salidas.length,
         motos_en_taller: motosEnTaller.length,
+        motos_pendientes_mas_24h: pendientesMas24h.length,
         motos_en_taller_detalle: motosEnTaller.map(r => ({
           placa: r.fields['Placa'],
           tecnico: r.fields['Técnico asignado'],
           tipo_servicio: r.fields['Tipo servicio'],
-          valor_estimado: r.fields['Valor estimado'],
+          horas_en_taller: r.fields['Timestamp ingreso'] ? Math.round((ahora - new Date(r.fields['Timestamp ingreso'])) / 3600000) : null,
           complejidad: r.fields['Complejidad']
         })),
-        entregas_a_tiempo: entregasATiempo,
-        entregas_retrasadas: entregasRetrasadas,
+        clientes_nuevos: ingresos.filter(r => r.fields['Tipo cliente'] === 'Nuevo').length,
+        clientes_recurrentes: ingresos.filter(r => r.fields['Tipo cliente'] === 'Recurrente').length,
+        tasa_entrega_tiempo: tasaEntrega,
+        tasa_upsell_cerrado: tasaUpsell,
+        valor_facturado_total: valorFacturado,
+        ticket_promedio: ticketPromedio,
+        upsells_cerrados: upsellsCerrados,
+        servicios_frecuentes: serviciosSorted,
         motos_por_tecnico: tecnicoCount,
-        salidas_recientes: salidas.slice(-10).map(s => ({
-          placa: s.fields['Placa'],
-          tecnico: s.fields['Técnico entrega'],
-          valor_final: s.fields['Valor final'],
-          entrega: s.fields['Entrega'],
-          tiempo_en_taller: s.fields['Tiempo en taller']
-        })),
-        ingresos_recientes: ingresos.slice(-10).map(r => ({
-          placa: r.fields['Placa'],
-          tecnico: r.fields['Técnico asignado'],
-          tipo_servicio: r.fields['Tipo servicio'],
-          origen: r.fields['Origen'],
-          valor_estimado: r.fields['Valor estimado']
-        }))
+        facturacion_por_tecnico: facturacionPorTecnico,
+        retrasos_por_tecnico: retrasosPorTecnico,
+        origen_clientes: origenCount
       };
     } catch (e) {
       tallerContext = {};
