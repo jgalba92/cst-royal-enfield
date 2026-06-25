@@ -508,8 +508,8 @@
       const res = await fetch(`${WORKER_URL}/dashboard?${params}`);
       const raw = await res.json();
 
-      const ingresoRecords = (raw.ingreso?.records || []).map(r => r.fields);
-      const salidaRecords  = (raw.salida?.records  || []).map(r => r.fields);
+      const ingresoRecords = (raw.ingreso?.records || []).map(r => ({ ...r.fields, createdTime: r.createdTime }));
+      const salidaRecords  = (raw.salida?.records  || []).map(r => ({ ...r.fields, createdTime: r.createdTime }));
 
       const data = calcularDatos(ingresoRecords, salidaRecords, filters);
       dashboardData = data;
@@ -529,10 +529,10 @@
 
   // ── CÁLCULO DE DATOS ───────────────────────────────────────────────────
   function calcularDatos(ingreso, salida, filters) {
-    const placasConSalida = new Set(salida.map(r => r['Placa']).filter(Boolean));
+    const placasConSalida = new Set(salida.map(r => (r['Placa'] || '').toUpperCase()).filter(Boolean));
     const ahora = new Date();
 
-    const enTaller = ingreso.filter(r => !placasConSalida.has(r['Placa']));
+    const enTaller = ingreso.filter(r => !placasConSalida.has((r['Placa'] || '').toUpperCase()));
     const pendientes24h = enTaller.filter(r => {
       if (!r['Timestamp ingreso']) return false;
       return (ahora - new Date(r['Timestamp ingreso'])) > 86400000;
@@ -573,19 +573,22 @@
     const valorDia = {};
     dias.forEach(d => { valorDia[d] = 0; });
     salida.forEach(r => {
-      const ts = r['Timestamp salida'] || r['Created Time'] || r['createdTime'] || '';
+      const ts = r['Timestamp salida'] || r['createdTime'] || '';
       const fecha = ts ? ts.slice(0, 10) : null;
       if (fecha && valorDia[fecha] !== undefined) valorDia[fecha] += r['Valor final'] || 0;
     });
 
     // Tabla: últimas 20 salidas, técnico desde INGRESO por placa
     const ingresoByPlaca = {};
-    ingreso.forEach(r => { if (r['Placa']) ingresoByPlaca[r['Placa']] = r; });
+    ingreso.forEach(r => { if (r['Placa']) ingresoByPlaca[(r['Placa'] || '').toUpperCase()] = r; });
 
-    const ultimasSalidas = [...salida].slice(-20).reverse().map(r => ({
-      fecha:      (r['Timestamp salida'] || r['Created Time'] || r['createdTime'] || '').slice(0, 10),
+    const ultimasSalidas = [...salida]
+      .sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0))
+      .slice(0, 20)
+      .map(r => ({
+      fecha:      (r['Timestamp salida'] || r['createdTime'] || '').slice(0, 10),
       placa:      r['Placa'] || '—',
-      tecnico:    ingresoByPlaca[r['Placa']]?.['Técnico asignado'] || '—',
+      tecnico:    ingresoByPlaca[(r['Placa'] || '').toUpperCase()]?.['Técnico asignado'] || '—',
       valorFinal: r['Valor final'] || 0,
       entrega:    r['Entrega'] || '—',
       upsell:     r['Upsell cerrado'] === true,
