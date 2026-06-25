@@ -592,58 +592,100 @@
   async function loadData() {
     const filters = getFilters();
 
-    // TODO: reemplazar mock data por fetch real al worker
-    // GET ${WORKER_URL}/dashboard?fechaInicio=${filters.fechaInicio}&fechaFin=${filters.fechaFin}&tecnico=${filters.tecnico}
-    // El worker debe calcular los KPIs y agregar los datos de INGRESO y SALIDA de Airtable
+    try {
+      const params = new URLSearchParams({ fechaInicio: filters.fechaInicio, fechaFin: filters.fechaFin });
+      if (filters.tecnico) params.set('tecnico', filters.tecnico);
 
-    const mock = getMockData(filters);
-    dashboardData = mock;
-    renderKPIs(mock);
-    renderCharts(mock);
-    renderTable(mock.ultimasSalidas);
+      const res = await fetch(`${WORKER_URL}/dashboard?${params}`);
+      const raw = await res.json();
+      console.log('Dashboard raw:', JSON.stringify(raw));
+
+      const ingresoRecords = (raw.ingreso || []).map(r => r.fields || r);
+      const salidaRecords  = (raw.salida  || []).map(r => r.fields || r);
+
+      const data = calcularDatos(ingresoRecords, salidaRecords, filters);
+      dashboardData = data;
+      renderKPIs(data);
+      renderCharts(data);
+      renderTable(data.ultimasSalidas);
+
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+      showToast('Error cargando datos del worker', true);
+    }
   }
 
-  // ── MOCK DATA ──────────────────────────────────────────────────────────
-  function getMockData(filters) {
-    // TODO: eliminar cuando el worker devuelva datos reales
+  // ── CÁLCULO DE DATOS ───────────────────────────────────────────────────
+  function calcularDatos(ingreso, salida, filters) {
+    const placasConSalida = new Set(salida.map(r => r['Placa']).filter(Boolean));
+    const ahora = new Date();
 
+    const enTaller = ingreso.filter(r => !placasConSalida.has(r['Placa']));
+    const pendientes24h = enTaller.filter(r => {
+      if (!r['Timestamp ingreso']) return false;
+      return (ahora - new Date(r['Timestamp ingreso'])) > 86400000;
+    });
+
+    const salidaConValor = salida.filter(r => r['Valor final'] > 0);
+    const entregaTiempo  = salida.length ? salida.filter(r => r['Entrega'] === 'A tiempo').length / salida.length : 0;
+    const upsellCerrado  = salida.length ? salida.filter(r => r['Upsell cerrado'] === true).length / salida.length : 0;
+    const valorFacturado = salida.reduce((s, r) => s + (r['Valor final'] || 0), 0);
+    const ticketPromedio = salidaConValor.length ? valorFacturado / salidaConValor.length : 0;
+
+    // Chart servicios — Tipo servicio es array en INGRESO
+    const servicioCount = {};
+    ingreso.forEach(r => {
+      const tipos = Array.isArray(r['Tipo servicio']) ? r['Tipo servicio'] : [r['Tipo servicio']].filter(Boolean);
+      tipos.forEach(t => { servicioCount[t] = (servicioCount[t] || 0) + 1; });
+    });
+    const serviciosSorted = Object.entries(servicioCount).sort((a, b) => b[1] - a[1]);
+
+    // Chart técnicos — desde INGRESO
+    const tecnicoCount = {};
+    ingreso.forEach(r => {
+      const t = r['Técnico asignado'];
+      if (t) tecnicoCount[t] = (tecnicoCount[t] || 0) + 1;
+    });
+    const tecnicosSorted = Object.entries(tecnicoCount).sort((a, b) => b[1] - a[1]);
+
+    // Chart origen
+    const origenCount = {};
+    ingreso.forEach(r => {
+      const o = r['Origen'];
+      if (o) origenCount[o] = (origenCount[o] || 0) + 1;
+    });
+    const origenSorted = Object.entries(origenCount).sort((a, b) => b[1] - a[1]);
+
+    // Chart valor por día
     const dias = getDaysInRange(filters.fechaInicio, filters.fechaFin);
+    const valorDia = {};
+    dias.forEach(d => { valorDia[d] = 0; });
+    salida.forEach(r => {
+      const ts = r['Timestamp salida'] || r['Created Time'] || r['createdTime'] || '';
+      const fecha = ts ? ts.slice(0, 10) : null;
+      if (fecha && valorDia[fecha] !== undefined) valorDia[fecha] += r['Valor final'] || 0;
+    });
+
+    // Tabla: últimas 20 salidas, técnico desde INGRESO por placa
+    const ingresoByPlaca = {};
+    ingreso.forEach(r => { if (r['Placa']) ingresoByPlaca[r['Placa']] = r; });
+
+    const ultimasSalidas = [...salida].slice(-20).reverse().map(r => ({
+      fecha:      (r['Timestamp salida'] || r['Created Time'] || r['createdTime'] || '').slice(0, 10),
+      placa:      r['Placa'] || '—',
+      tecnico:    ingresoByPlaca[r['Placa']]?.['Técnico asignado'] || '—',
+      valorFinal: r['Valor final'] || 0,
+      entrega:    r['Entrega'] || '—',
+      upsell:     r['Upsell cerrado'] === true,
+    }));
 
     return {
-      kpis: {
-        enTaller:      7,
-        pendientes24h: 2,
-        entregaTiempo: 0.87,
-        upsellCerrado: 0.34,
-        valorFacturado: 4850000,
-        ticketPromedio: 185000,
-      },
-      servicios: {
-        labels: ['Mantenimiento', 'Reparación', 'Diagnóstico', 'Garantía', 'Accesorios'],
-        values: [45, 28, 15, 10, 7],
-      },
-      tecnicos: {
-        labels: ['Técnico 1', 'Técnico 2', 'Técnico 3', 'Técnico 4', 'Técnico 5', 'Técnico 6'],
-        values: [22, 19, 17, 15, 12, 8],
-      },
-      origen: {
-        labels: ['Propio', 'Walk-in', 'Referido', 'Redes sociales', 'Otro concesionario'],
-        values: [42, 23, 18, 9, 5],
-      },
-      valorPorDia: {
-        labels: dias,
-        values: dias.map(() => Math.floor(Math.random() * 500000 + 80000)),
-      },
-      ultimasSalidas: [
-        { fecha: '2026-06-24', placa: 'ABC12D', tecnico: 'Técnico 2', valorFinal: 220000, entrega: 'A tiempo',  upsell: true  },
-        { fecha: '2026-06-24', placa: 'XYZ99A', tecnico: 'Técnico 1', valorFinal: 185000, entrega: 'Retrasada', upsell: false },
-        { fecha: '2026-06-23', placa: 'DEF45G', tecnico: 'Técnico 3', valorFinal: 310000, entrega: 'A tiempo',  upsell: true  },
-        { fecha: '2026-06-23', placa: 'GHI77B', tecnico: 'Técnico 5', valorFinal: 95000,  entrega: 'A tiempo',  upsell: false },
-        { fecha: '2026-06-22', placa: 'JKL33C', tecnico: 'Técnico 4', valorFinal: 430000, entrega: 'Retrasada', upsell: false },
-        { fecha: '2026-06-22', placa: 'MNO56H', tecnico: 'Técnico 2', valorFinal: 175000, entrega: 'A tiempo',  upsell: true  },
-        { fecha: '2026-06-21', placa: 'PQR88E', tecnico: 'Técnico 1', valorFinal: 260000, entrega: 'A tiempo',  upsell: false },
-        { fecha: '2026-06-21', placa: 'STU22F', tecnico: 'Técnico 6', valorFinal: 140000, entrega: 'A tiempo',  upsell: true  },
-      ],
+      kpis: { enTaller: enTaller.length, pendientes24h: pendientes24h.length, entregaTiempo, upsellCerrado, valorFacturado, ticketPromedio },
+      servicios:  { labels: serviciosSorted.map(([k]) => k), values: serviciosSorted.map(([, v]) => v) },
+      tecnicos:   { labels: tecnicosSorted.map(([k]) => k),  values: tecnicosSorted.map(([, v]) => v) },
+      origen:     { labels: origenSorted.map(([k]) => k),    values: origenSorted.map(([, v]) => v) },
+      valorPorDia:{ labels: dias, values: dias.map(d => valorDia[d]) },
+      ultimasSalidas,
     };
   }
 
@@ -853,7 +895,7 @@ Ticket promedio: $${Math.round(dashboardData.kpis.ticketPromedio).toLocaleString
       if (!res.ok) throw new Error('Error del servidor');
 
       const data = await res.json();
-      const reply = data.content?.[0]?.text || data.reply || 'Sin respuesta';
+      const reply = data.text || data.content?.[0]?.text || data.reply || 'Sin respuesta';
 
       chatHistory.push({ role: 'assistant', content: reply });
       addChatMessage(reply, 'assistant');
