@@ -861,7 +861,27 @@
       const res = await fetch(`${WORKER_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: panelHistory, context: dashboardData.rawContext || {} }),
+        body: JSON.stringify({
+          messages: panelHistory,
+          context: {
+            total_ingresos: dashboardData.rawContext?.total_ingresos,
+            total_salidas: dashboardData.rawContext?.total_salidas,
+            motos_en_taller: dashboardData.rawContext?.motos_en_taller_ahora,
+            pendientes_24h: dashboardData.rawContext?.motos_pendientes_mas_24h,
+            clientes_nuevos: dashboardData.rawContext?.clientes_nuevos,
+            clientes_recurrentes: dashboardData.rawContext?.clientes_recurrentes,
+            tasa_entrega: dashboardData.rawContext?.tasa_entrega_tiempo,
+            tasa_upsell: dashboardData.rawContext?.tasa_upsell_cerrado,
+            valor_facturado: dashboardData.rawContext?.valor_facturado_total,
+            ticket_promedio: dashboardData.rawContext?.ticket_promedio,
+            servicios_frecuentes: dashboardData.rawContext?.servicios_frecuentes,
+            motos_por_tecnico: dashboardData.rawContext?.motos_por_tecnico,
+            facturacion_por_tecnico: dashboardData.rawContext?.facturacion_por_tecnico,
+            origen_clientes: dashboardData.rawContext?.origen_clientes,
+            upsells_cerrados: dashboardData.rawContext?.upsells_cerrados,
+            motos_en_taller_detalle: dashboardData.rawContext?.motos_en_taller_detalle
+          }
+        }),
       });
       thinking.remove();
       const data = await res.json();

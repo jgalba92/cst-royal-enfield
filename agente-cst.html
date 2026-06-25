@@ -382,7 +382,24 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: chatHistory,
-          context: tallerContext || {}
+          context: {
+            total_ingresos: tallerContext?.total_ingresos,
+            total_salidas: tallerContext?.total_salidas,
+            motos_en_taller: tallerContext?.motos_en_taller,
+            pendientes_24h: tallerContext?.motos_pendientes_mas_24h,
+            clientes_nuevos: tallerContext?.clientes_nuevos,
+            clientes_recurrentes: tallerContext?.clientes_recurrentes,
+            tasa_entrega: tallerContext?.tasa_entrega_tiempo,
+            tasa_upsell: tallerContext?.tasa_upsell_cerrado,
+            valor_facturado: tallerContext?.valor_facturado_total,
+            ticket_promedio: tallerContext?.ticket_promedio,
+            servicios_frecuentes: tallerContext?.servicios_frecuentes,
+            motos_por_tecnico: tallerContext?.motos_por_tecnico,
+            facturacion_por_tecnico: tallerContext?.facturacion_por_tecnico,
+            origen_clientes: tallerContext?.origen_clientes,
+            upsells_cerrados: tallerContext?.upsells_cerrados,
+            motos_en_taller_detalle: tallerContext?.motos_en_taller_detalle
+          }
         }),
       });
 
