@@ -513,6 +513,59 @@
 
       const data = calcularDatos(ingresoRecords, salidaRecords, filters);
       dashboardData = data;
+
+      const facturacionPorTecnico = {};
+      salidaRecords.forEach(r => {
+        const t = r['Técnico entrega'];
+        if (t) facturacionPorTecnico[t] = (facturacionPorTecnico[t] || 0) + (r['Valor final'] || 0);
+      });
+
+      const deltaEstimadoFinal = ingresoRecords
+        .filter(r => r['SALIDA'] && r['SALIDA'].length > 0)
+        .map(r => {
+          const salida = salidaRecords.find(s => (s['Placa'] || '').toUpperCase() === (r['Placa'] || '').toUpperCase());
+          return {
+            placa: r['Placa'],
+            estimado: r['Valor estimado'] || 0,
+            final: salida?.['Valor final'] || 0,
+            diferencia: (salida?.['Valor final'] || 0) - (r['Valor estimado'] || 0)
+          };
+        });
+
+      const motosEnTallerDetalle = ingresoRecords
+        .filter(r => !new Set(salidaRecords.map(s => (s['Placa'] || '').toUpperCase())).has((r['Placa'] || '').toUpperCase()))
+        .map(r => ({
+          placa: r['Placa'],
+          tecnico: r['Técnico asignado'],
+          tipo_servicio: r['Tipo servicio'],
+          horas_en_taller: Math.round((new Date() - new Date(r['Timestamp ingreso'])) / 3600000),
+          complejidad: r['Complejidad']
+        }));
+
+      dashboardData.rawContext = {
+        rango_fechas: { inicio: filters.fechaInicio, fin: filters.fechaFin },
+        total_ingresos: ingresoRecords.length,
+        total_salidas: salidaRecords.length,
+        motos_en_taller_ahora: data.kpis.enTaller,
+        motos_pendientes_mas_24h: data.kpis.pendientes24h,
+        motos_en_taller_detalle: motosEnTallerDetalle,
+        clientes_nuevos: ingresoRecords.filter(r => r['Tipo cliente'] === 'Nuevo').length,
+        clientes_recurrentes: ingresoRecords.filter(r => r['Tipo cliente'] === 'Recurrente').length,
+        origen_clientes: Object.fromEntries(data.origen.labels.map((l, i) => [l, data.origen.values[i]])),
+        tasa_entrega_tiempo: Math.round(data.kpis.entregaTiempo * 100) + '%',
+        entregas_a_tiempo: Math.round(data.kpis.entregaTiempo * salidaRecords.length),
+        entregas_retrasadas: Math.round((1 - data.kpis.entregaTiempo) * salidaRecords.length),
+        tasa_upsell_cerrado: Math.round(data.kpis.upsellCerrado * 100) + '%',
+        upsells_cerrados: Math.round(data.kpis.upsellCerrado * salidaRecords.length),
+        valor_facturado_total: data.kpis.valorFacturado,
+        ticket_promedio: data.kpis.ticketPromedio,
+        facturacion_por_tecnico: facturacionPorTecnico,
+        servicios_frecuentes: data.servicios.labels.map((l, i) => ({ servicio: l, cantidad: data.servicios.values[i] })),
+        motos_por_tecnico: Object.fromEntries(data.tecnicos.labels.map((l, i) => [l, data.tecnicos.values[i]])),
+        delta_estimado_final: deltaEstimadoFinal,
+        salidas_recientes: data.ultimasSalidas
+      };
+
       renderKPIs(data);
       renderCharts(data);
       renderTable(data.ultimasSalidas);
