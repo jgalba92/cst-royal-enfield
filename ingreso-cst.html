@@ -487,6 +487,8 @@
     btn.textContent = 'Registrando...';
 
     try {
+      console.log('fields:', JSON.stringify(fields, null, 2));
+
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
