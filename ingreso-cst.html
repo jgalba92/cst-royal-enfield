@@ -414,9 +414,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="config.js"></script>
 <script>
-  const { AIRTABLE_TOKEN, AIRTABLE_BASE, TABLE_INGRESO } = CONFIG;
+  const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
 
   // Condicional timestamp
   document.getElementById('ingresandoAhora').addEventListener('change', function() {
@@ -487,13 +486,13 @@
     btn.textContent = 'Registrando...';
 
     try {
-      const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${TABLE_INGRESO}`, {
+      const res = await fetch(WORKER_URL, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ fields })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId: 'tblVfL0uCihLTIQ9l',
+          fields: fields
+        })
       });
 
       if (!res.ok) throw new Error('Error Airtable');
