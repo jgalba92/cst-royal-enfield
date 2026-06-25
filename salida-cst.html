@@ -375,8 +375,12 @@
     resetInfo();
     if (!placa) return;
 
+    const url = `${WORKER_URL}/buscar?placa=${encodeURIComponent(placa)}`;
+    console.log('buscarIngreso llamado con placa:', placa);
+    console.log('URL:', url);
+
     try {
-      const res = await fetch(`${WORKER_URL}/buscar?placa=${encodeURIComponent(placa)}`);
+      const res = await fetch(url);
       const data = await res.json();
 
       if (!res.ok || !data.found) {
