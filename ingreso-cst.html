@@ -498,6 +498,9 @@
         })
       });
 
+      const responseData = await res.json();
+      console.log('Worker response:', JSON.stringify(responseData));
+
       if (!res.ok) throw new Error('Error Airtable');
 
       showToast('Ingreso registrado correctamente');
