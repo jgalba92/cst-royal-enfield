@@ -382,15 +382,10 @@
     if (!placa) return;
 
     const url = `${WORKER_URL}/buscar?placa=${encodeURIComponent(placa)}`;
-    console.log('buscarIngreso llamado con placa:', placa);
-    console.log('URL:', url);
 
     try {
       const res = await fetch(url);
       const data = await res.json();
-      console.log('res.ok:', res.ok);
-      console.log('data:', JSON.stringify(data));
-      console.log('records length:', data.records ? data.records.length : 'no records');
 
       if (!res.ok || !data.records || data.records.length === 0) {
         setPlacaError('No se encontró ingreso abierto para esta placa');
@@ -506,8 +501,6 @@
     btn.textContent = 'Registrando...';
 
     try {
-      console.log('fields:', JSON.stringify(fields, null, 2));
-
       const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -515,7 +508,6 @@
       });
 
       const responseText = await res.text();
-      console.log('Status:', res.status, 'Response:', responseText);
 
       if (!res.ok) throw new Error('Error: ' + responseText);
 
