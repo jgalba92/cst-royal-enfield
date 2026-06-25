@@ -464,8 +464,8 @@
     const fields = {
       'Placa': placa,
       'Valor final': valorFinal,
-      'Se ofreció upsell': ofrecioUpsell,
-      'Entrega a tiempo': entregaATiempo,
+      'Upsell ofrecido': ofrecioUpsell === 'Sí',
+      'Entrega': entregaATiempo,
     };
 
     if (ofrecioUpsell === 'Sí') {
@@ -474,17 +474,17 @@
         showToast('Indica si se cerró el upsell', true);
         return;
       }
-      fields['Se cerró upsell'] = cerroUpsell;
+      fields['Upsell cerrado'] = cerroUpsell === 'Sí';
 
       if (cerroUpsell === 'Sí') {
         const valorUpsell = parseFloat(document.getElementById('valorUpsell').value);
-        if (valorUpsell > 0) fields['Valor upsell'] = valorUpsell;
+        if (valorUpsell > 0) fields['Ítem upsell'] = valorUpsell;
       }
     }
 
     if (entregaATiempo === 'No') {
       const razon = document.getElementById('razonRetraso').value.trim();
-      if (razon) fields['Razón de retraso'] = razon;
+      if (razon) fields['Razón retraso'] = razon;
     }
 
     const comentarios = document.getElementById('comentariosSalida').value.trim();
