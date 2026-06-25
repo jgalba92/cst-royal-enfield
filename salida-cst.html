@@ -326,8 +326,8 @@
         <label>¿Entrega a tiempo? <span class="req">*</span></label>
         <select id="entregaATiempo" required>
           <option value="">Selecciona una opción</option>
-          <option value="Sí">Sí</option>
-          <option value="No">No</option>
+          <option value="A tiempo">A tiempo</option>
+          <option value="Retrasada">Retrasada</option>
         </select>
       </div>
 
@@ -446,8 +446,8 @@
   });
 
   document.getElementById('entregaATiempo').addEventListener('change', function() {
-    document.getElementById('razonRetrasoField').classList.toggle('visible', this.value === 'No');
-    if (this.value !== 'No') document.getElementById('razonRetraso').value = '';
+    document.getElementById('razonRetrasoField').classList.toggle('visible', this.value === 'Retrasada');
+    if (this.value !== 'Retrasada') document.getElementById('razonRetraso').value = '';
   });
 
   document.getElementById('salidaForm').addEventListener('submit', async function(e) {
@@ -491,7 +491,7 @@
       }
     }
 
-    if (entregaATiempo === 'No') {
+    if (entregaATiempo === 'Retrasada') {
       const razon = document.getElementById('razonRetraso').value.trim();
       if (razon) fields['Razón retraso'] = razon;
     }
