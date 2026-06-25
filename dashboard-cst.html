@@ -502,7 +502,10 @@
     const filters = getFilters();
 
     try {
-      const params = new URLSearchParams({ fechaInicio: filters.fechaInicio, fechaFin: filters.fechaFin });
+      const fechaFinMas1 = new Date(filters.fechaFin);
+      fechaFinMas1.setDate(fechaFinMas1.getDate() + 1);
+      const fechaFinParam = fechaFinMas1.toISOString().slice(0, 10);
+      const params = new URLSearchParams({ fechaInicio: filters.fechaInicio, fechaFin: fechaFinParam });
       if (filters.tecnico) params.set('tecnico', filters.tecnico);
 
       const res = await fetch(`${WORKER_URL}/dashboard?${params}`);
