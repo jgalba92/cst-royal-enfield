@@ -482,7 +482,7 @@
   function setDefaultDates() {
     const today = new Date();
     const ago30 = new Date();
-    ago30.setDate(today.getDate() - 30);
+    ago30.setDate(today.getDate() - 90);
     document.getElementById('fechaFin').value   = today.toISOString().slice(0, 10);
     document.getElementById('fechaInicio').value = ago30.toISOString().slice(0, 10);
   }
@@ -516,6 +516,15 @@
       renderKPIs(data);
       renderCharts(data);
       renderTable(data.ultimasSalidas);
+      dashboardData.rawContext = {
+        total_ingresos: ingresoRecords.length,
+        total_salidas: salidaRecords.length,
+        motos_en_taller: data.kpis.enTaller,
+        entregas_a_tiempo: Math.round(data.kpis.entregaTiempo * salidaRecords.length),
+        entregas_retrasadas: Math.round((1 - data.kpis.entregaTiempo) * salidaRecords.length),
+        motos_por_tecnico: Object.fromEntries(data.tecnicos.labels.map((l, i) => [l, data.tecnicos.values[i]])),
+        salidas_recientes: data.ultimasSalidas
+      };
 
     } catch (err) {
       showToast('Error cargando datos del worker', true);
@@ -583,7 +592,7 @@
     ingreso.forEach(r => { if (r['Placa']) ingresoByPlaca[(r['Placa'] || '').toUpperCase()] = r; });
 
     const ultimasSalidas = [...salida]
-      .sort((a, b) => new Date(b.createdTime || 0) - new Date(a.createdTime || 0))
+      .sort((a, b) => new Date(b['Timestamp salida'] || b.createdTime || 0) - new Date(a['Timestamp salida'] || a.createdTime || 0))
       .slice(0, 20)
       .map(r => ({
       fecha:      (r['Timestamp salida'] || r['createdTime'] || '').slice(0, 10),
@@ -808,7 +817,7 @@
       const res = await fetch(`${WORKER_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system: PANEL_SYSTEM, messages: panelHistory }),
+        body: JSON.stringify({ messages: panelHistory, context: dashboardData.rawContext || {} }),
       });
       thinking.remove();
       const data = await res.json();
