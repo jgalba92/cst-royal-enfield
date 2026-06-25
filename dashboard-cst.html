@@ -569,15 +569,6 @@
       renderKPIs(data);
       renderCharts(data);
       renderTable(data.ultimasSalidas);
-      dashboardData.rawContext = {
-        total_ingresos: ingresoRecords.length,
-        total_salidas: salidaRecords.length,
-        motos_en_taller: data.kpis.enTaller,
-        entregas_a_tiempo: Math.round(data.kpis.entregaTiempo * salidaRecords.length),
-        entregas_retrasadas: Math.round((1 - data.kpis.entregaTiempo) * salidaRecords.length),
-        motos_por_tecnico: Object.fromEntries(data.tecnicos.labels.map((l, i) => [l, data.tecnicos.values[i]])),
-        salidas_recientes: data.ultimasSalidas
-      };
 
     } catch (err) {
       showToast('Error cargando datos del worker', true);
