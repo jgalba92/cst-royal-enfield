@@ -264,113 +264,6 @@
   .badge-gold  { background: rgba(201,168,76,0.15); color: var(--gold); }
   .badge-muted { background: rgba(136,136,136,0.15); color: var(--text-muted); }
 
-  /* CHAT */
-  .chat-card { margin-bottom: 20px; }
-
-  .chat-history {
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    min-height: 200px;
-    max-height: 360px;
-    overflow-y: auto;
-    margin-bottom: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .chat-empty {
-    color: var(--text-muted);
-    font-size: 13px;
-    text-align: center;
-    margin: auto;
-  }
-
-  .chat-msg {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 85%;
-  }
-
-  .chat-msg.user { align-self: flex-end; align-items: flex-end; }
-  .chat-msg.assistant { align-self: flex-start; }
-
-  .chat-bubble {
-    padding: 10px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .chat-msg.user .chat-bubble {
-    background: var(--red);
-    color: white;
-    border-radius: 10px 10px 2px 10px;
-  }
-
-  .chat-msg.assistant .chat-bubble {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 10px 10px 10px 2px;
-  }
-
-  .chat-role {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--text-muted);
-    padding: 0 4px;
-  }
-
-  .chat-input-row {
-    display: flex;
-    gap: 10px;
-  }
-
-  .chat-input-row input {
-    flex: 1;
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .chat-input-row input:focus { border-color: var(--border-focus); }
-  .chat-input-row input::placeholder { color: var(--text-muted); }
-
-  .chat-send-btn {
-    background: var(--red);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 10px 20px;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    white-space: nowrap;
-  }
-
-  .chat-send-btn:hover { opacity: 0.85; }
-  .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .chat-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 8px;
-  }
-
   /* TOAST */
   .toast {
     position: fixed;
@@ -534,19 +427,6 @@
     </div>
   </div>
 
-  <!-- AI AGENT -->
-  <div class="card chat-card">
-    <div class="section-title">Asistente IA — CST Royal Enfield</div>
-    <div class="chat-history" id="chatHistory">
-      <span class="chat-empty">Haz una pregunta sobre el taller...</span>
-    </div>
-    <div class="chat-input-row">
-      <input type="text" id="chatInput" placeholder="Ej. ¿Cuántas motos están en taller hoy?" onkeydown="if(event.key==='Enter') sendChat()">
-      <button class="chat-send-btn" id="chatSendBtn" onclick="sendChat()">Enviar</button>
-    </div>
-    <p class="chat-hint">Powered by Claude claude-sonnet-4-6 · Las respuestas usan los datos actuales del dashboard</p>
-  </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
@@ -557,7 +437,6 @@
   const TABLE_SALIDA  = 'tblRwfsW7lTwGzvpJ';
 
   let chartInstances = {};
-  let chatHistory = [];
   let dashboardData = {};
 
   // ── CLOCK ──────────────────────────────────────────────────────────────
@@ -836,77 +715,6 @@
         <td>${upsellBadge}</td>
       </tr>`;
     }).join('');
-  }
-
-  // ── CHAT ───────────────────────────────────────────────────────────────
-  const SYSTEM_PROMPT = `Eres el asistente operativo del taller CST Royal Enfield Zona T. Tienes acceso a datos del taller. Responde preguntas sobre motos en taller, tiempos, técnicos, upsell y facturación. Sé directo y usa números cuando los tengas. Responde en el idioma en que te escriban.`;
-
-  function addChatMessage(text, role) {
-    const history = document.getElementById('chatHistory');
-    const empty = history.querySelector('.chat-empty');
-    if (empty) empty.remove();
-
-    const div = document.createElement('div');
-    div.className = `chat-msg ${role}`;
-    div.innerHTML = `
-      <span class="chat-role">${role === 'user' ? 'Tú' : 'Asistente'}</span>
-      <div class="chat-bubble">${text.replace(/\n/g, '<br>')}</div>
-    `;
-    history.appendChild(div);
-    history.scrollTop = history.scrollHeight;
-  }
-
-  async function sendChat() {
-    const input = document.getElementById('chatInput');
-    const btn = document.getElementById('chatSendBtn');
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    addChatMessage(msg, 'user');
-    input.value = '';
-    btn.disabled = true;
-
-    chatHistory.push({ role: 'user', content: msg });
-
-    // Contexto de datos actuales para incluir en el mensaje
-    const ctx = dashboardData.kpis ? `
-[Datos actuales del dashboard]
-Motos en taller ahora: ${dashboardData.kpis.enTaller}
-Pendientes +24h: ${dashboardData.kpis.pendientes24h}
-Tasa entrega a tiempo: ${Math.round(dashboardData.kpis.entregaTiempo * 100)}%
-Tasa upsell cerrado: ${Math.round(dashboardData.kpis.upsellCerrado * 100)}%
-Valor facturado: $${Math.round(dashboardData.kpis.valorFacturado).toLocaleString('es-CO')}
-Ticket promedio: $${Math.round(dashboardData.kpis.ticketPromedio).toLocaleString('es-CO')}
-` : '';
-
-    try {
-      // TODO: el worker /chat debe llamar a Claude API server-side con el API key
-      // El worker recibe { messages, system, context } y devuelve { content: [{ text: '...' }] }
-      const res = await fetch(`${WORKER_URL}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: SYSTEM_PROMPT,
-          context: ctx,
-          messages: chatHistory,
-        }),
-      });
-
-      if (!res.ok) throw new Error('Error del servidor');
-
-      const data = await res.json();
-      const reply = data.text || data.content?.[0]?.text || data.reply || 'Sin respuesta';
-
-      chatHistory.push({ role: 'assistant', content: reply });
-      addChatMessage(reply, 'assistant');
-
-    } catch (err) {
-      addChatMessage('Error al conectar con el asistente. Intenta de nuevo.', 'assistant');
-      chatHistory.pop();
-    } finally {
-      btn.disabled = false;
-      input.focus();
-    }
   }
 
   // ── TOAST ──────────────────────────────────────────────────────────────
