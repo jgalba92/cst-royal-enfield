@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salida de Moto — CST Royal Enfield</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --red: #C8102E;
+    --gold: #C9A84C;
+    --bg: #1A1A1A;
+    --card: #242424;
+    --input-bg: #2E2E2E;
+    --border: #3A3A3A;
+    --border-focus: #C9A84C;
+    --text: #F0F0F0;
+    --text-muted: #888;
+    --error: #FF4D4D;
+    --success: #2ECC71;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  .container {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--red);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .header-icon svg { width: 22px; height: 22px; fill: white; }
+
+  .header-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .header-text p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+  }
+
+  label .req { color: var(--red); margin-left: 2px; }
+
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--border-focus);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  select option { background: #2E2E2E; color: var(--text); }
+
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  input[readonly] {
+    color: var(--text-muted);
+    cursor: default;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .info-item {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .info-item .info-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .info-item .info-value {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .info-item .info-value.loaded {
+    color: var(--text);
+  }
+
+  .conditional { display: none; }
+  .conditional.visible { display: block; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0 16px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .submit-btn:hover { opacity: 0.9; }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--success);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 999px;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--error); }
+
+  @media (max-width: 400px) {
+    .field-row { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Salida de Moto</h1>
+      <p>Registra la entrega y cierre del servicio.</p>
+    </div>
+  </div>
+
+  <form id="salidaForm" novalidate>
+
+    <!-- PLACA -->
+    <div class="card">
+      <div class="field">
+        <label>Placa <span class="req">*</span></label>
+        <input type="text" id="placa" placeholder="Ej. ABC12D" autocomplete="off" required>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Tipo cliente</span>
+          <span class="info-value" id="info-tipoCliente">—</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Tipo servicio</span>
+          <span class="info-value" id="info-tipoServicio">—</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Técnico asignado</span>
+          <span class="info-value" id="info-tecnico">—</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Valor estimado</span>
+          <span class="info-value" id="info-valorEstimado">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VALORES -->
+    <div class="card">
+      <div class="field">
+        <label>Valor final <span class="req">*</span></label>
+        <input type="number" id="valorFinal" placeholder="Ej. 180000" min="0" required>
+      </div>
+    </div>
+
+    <!-- UPSELL -->
+    <div class="card">
+      <div class="field">
+        <label>¿Se ofreció upsell? <span class="req">*</span></label>
+        <select id="ofrecioUpsell" required>
+          <option value="">Selecciona una opción</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      <div class="conditional" id="cerroUpsellField">
+        <div class="divider"></div>
+        <div class="field">
+          <label>¿Se cerró upsell? <span class="req">*</span></label>
+          <select id="cerroUpsell">
+            <option value="">Selecciona una opción</option>
+            <option value="Sí">Sí</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="conditional" id="valorUpsellField">
+        <div class="field">
+          <label>Valor upsell</label>
+          <input type="number" id="valorUpsell" placeholder="Ej. 50000" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- ENTREGA -->
+    <div class="card">
+      <div class="field">
+        <label>¿Entrega a tiempo? <span class="req">*</span></label>
+        <select id="entregaATiempo" required>
+          <option value="">Selecciona una opción</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      <div class="conditional" id="razonRetrasoField">
+        <div class="divider"></div>
+        <div class="field">
+          <label>Razón de retraso</label>
+          <textarea id="razonRetraso" placeholder="Describe el motivo del retraso"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMENTARIOS -->
+    <div class="card">
+      <div class="field">
+        <label>Comentarios salida</label>
+        <textarea id="comentariosSalida" placeholder="Observaciones adicionales de la entrega"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Registrar salida</button>
+
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
+
+  document.getElementById('ofrecioUpsell').addEventListener('change', function() {
+    const ofrecio = this.value === 'Sí';
+    document.getElementById('cerroUpsellField').classList.toggle('visible', ofrecio);
+    if (!ofrecio) {
+      document.getElementById('cerroUpsell').value = '';
+      document.getElementById('valorUpsellField').classList.remove('visible');
+      document.getElementById('valorUpsell').value = '';
+    }
+  });
+
+  document.getElementById('cerroUpsell').addEventListener('change', function() {
+    document.getElementById('valorUpsellField').classList.toggle('visible', this.value === 'Sí');
+    if (this.value !== 'Sí') document.getElementById('valorUpsell').value = '';
+  });
+
+  document.getElementById('entregaATiempo').addEventListener('change', function() {
+    document.getElementById('razonRetrasoField').classList.toggle('visible', this.value === 'No');
+    if (this.value !== 'No') document.getElementById('razonRetraso').value = '';
+  });
+
+  document.getElementById('salidaForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const placa = document.getElementById('placa').value.trim().toUpperCase();
+    const valorFinal = parseFloat(document.getElementById('valorFinal').value);
+    const ofrecioUpsell = document.getElementById('ofrecioUpsell').value;
+    const entregaATiempo = document.getElementById('entregaATiempo').value;
+
+    if (!placa || !ofrecioUpsell || !entregaATiempo) {
+      showToast('Completa los campos requeridos', true);
+      return;
+    }
+
+    if (isNaN(valorFinal) || valorFinal <= 0) {
+      showToast('Ingresa un valor final válido', true);
+      return;
+    }
+
+    const fields = {
+      'Placa': placa,
+      'Valor final': valorFinal,
+      'Se ofreció upsell': ofrecioUpsell,
+      'Entrega a tiempo': entregaATiempo,
+    };
+
+    if (ofrecioUpsell === 'Sí') {
+      const cerroUpsell = document.getElementById('cerroUpsell').value;
+      if (!cerroUpsell) {
+        showToast('Indica si se cerró el upsell', true);
+        return;
+      }
+      fields['Se cerró upsell'] = cerroUpsell;
+
+      if (cerroUpsell === 'Sí') {
+        const valorUpsell = parseFloat(document.getElementById('valorUpsell').value);
+        if (valorUpsell > 0) fields['Valor upsell'] = valorUpsell;
+      }
+    }
+
+    if (entregaATiempo === 'No') {
+      const razon = document.getElementById('razonRetraso').value.trim();
+      if (razon) fields['Razón de retraso'] = razon;
+    }
+
+    const comentarios = document.getElementById('comentariosSalida').value.trim();
+    if (comentarios) fields['Comentarios salida'] = comentarios;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+
+    try {
+      console.log('fields:', JSON.stringify(fields, null, 2));
+
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableId: 'tblRwfsW7lTwGzvpJ', fields: fields })
+      });
+
+      const responseText = await res.text();
+      console.log('Status:', res.status, 'Response:', responseText);
+
+      if (!res.ok) throw new Error('Error: ' + responseText);
+
+      showToast('Salida registrada correctamente');
+      document.getElementById('salidaForm').reset();
+      document.getElementById('cerroUpsellField').classList.remove('visible');
+      document.getElementById('valorUpsellField').classList.remove('visible');
+      document.getElementById('razonRetrasoField').classList.remove('visible');
+
+    } catch (err) {
+      showToast('Error al registrar. Intenta de nuevo.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Registrar salida';
+    }
+  });
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+</script>
+</body>
+</html>
