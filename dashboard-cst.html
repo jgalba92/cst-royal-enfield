@@ -812,6 +812,7 @@
       });
       thinking.remove();
       const data = await res.json();
+      console.log('Chat worker response:', JSON.stringify(data));
       const reply = data.text || data.content?.[0]?.text || data.reply || 'Sin respuesta';
       panelHistory.push({ role: 'assistant', content: reply });
       addPanelMsg(reply, 'assistant');
