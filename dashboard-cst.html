@@ -320,7 +320,9 @@
     <div class="header-clock">
       <span class="time" id="clockTime">--:--</span>
       <span id="clockDate"></span>
+      <span id="lastUpdate" style="display:none;font-size:11px;color:var(--text-muted);margin-top:4px;display:block"></span>
     </div>
+    <button onclick="loadData()" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
   </div>
 
   <!-- FILTROS -->
@@ -491,6 +493,11 @@
     } catch (err) {
       console.error('Error cargando datos:', err);
       showToast('Error cargando datos del worker', true);
+    } finally {
+      const now = new Date();
+      const hhmm = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+      const el = document.getElementById('lastUpdate');
+      if (el) { el.textContent = `Actualizado: ${hhmm}`; el.style.display = 'block'; }
     }
   }
 
@@ -733,6 +740,7 @@
   setDefaultDates();
   updateClock();
   setInterval(updateClock, 60000);
+  setInterval(loadData, 300000);
   loadData();
 </script>
 </body>
