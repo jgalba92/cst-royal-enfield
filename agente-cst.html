@@ -281,10 +281,44 @@
 <script>
   const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
 
-  const SYSTEM_PROMPT = `Eres el asistente operativo del taller CST Royal Enfield Zona T. Tienes acceso a datos del taller. Responde preguntas sobre motos en taller, tiempos, técnicos, upsell y facturación. Sé directo y usa números cuando los tengas. Responde en el idioma en que te escriban.`;
-
   let chatHistory = [];
   let emptyScreenRemoved = false;
+  let tallerContext = null;
+
+  async function loadContext() {
+    try {
+      const res = await fetch(`${WORKER_URL}/dashboard`);
+      const data = await res.json();
+      const salidas = data.salida?.records || [];
+      const ingresos = data.ingreso?.records || [];
+
+      const motosEnTaller = ingresos.filter(r => {
+        const placa = r.fields['Placa'];
+        return !salidas.some(s => s.fields['Placa'] === placa);
+      });
+
+      tallerContext = {
+        total_ingresos: ingresos.length,
+        total_salidas: salidas.length,
+        motos_en_taller: motosEnTaller.length,
+        salidas_recientes: salidas.slice(-10).map(s => ({
+          placa: s.fields['Placa'],
+          tecnico: s.fields['Técnico asignado'],
+          valor_final: s.fields['Valor final'],
+          entrega: s.fields['Entrega'],
+          upsell: s.fields['Upsell cerrado']
+        })),
+        ingresos_recientes: ingresos.slice(-10).map(r => ({
+          placa: r.fields['Placa'],
+          tecnico: r.fields['Técnico asignado'],
+          tipo_servicio: r.fields['Tipo servicio'],
+          origen: r.fields['Origen']
+        }))
+      };
+    } catch (e) {
+      tallerContext = {};
+    }
+  }
 
   function removeEmptyScreen() {
     if (!emptyScreenRemoved) {
@@ -332,8 +366,8 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system: SYSTEM_PROMPT,
           messages: chatHistory,
+          context: tallerContext || {}
         }),
       });
 
@@ -342,7 +376,7 @@
       if (!res.ok) throw new Error('Error del servidor');
 
       const data = await res.json();
-      const reply = data.text || data.content?.[0]?.text || data.reply || 'Sin respuesta';
+      const reply = data.text || 'Sin respuesta';
 
       chatHistory.push({ role: 'assistant', content: reply });
       addMessage(reply, 'assistant');
@@ -356,6 +390,8 @@
       input.focus();
     }
   }
+
+  loadContext();
 </script>
 </body>
 </html>
