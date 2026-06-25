@@ -414,10 +414,9 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="config.js"></script>
 <script>
-  const AIRTABLE_TOKEN = 'TU_TOKEN_AQUI';
-  const AIRTABLE_BASE  = 'appdJ0dKmyekYlGU5';
-  const TABLE_INGRESO  = 'tblVfL0uCihLTIQ9l';
+  const { AIRTABLE_TOKEN, AIRTABLE_BASE, TABLE_INGRESO } = CONFIG;
 
   // Condicional timestamp
   document.getElementById('ingresandoAhora').addEventListener('change', function() {
