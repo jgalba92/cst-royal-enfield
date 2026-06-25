@@ -207,11 +207,17 @@
   .chart-card {
     background: var(--card);
     border-radius: 12px;
-    padding: 20px;
+    padding: 16px;
     border: 1px solid var(--border);
   }
 
-  .chart-card canvas { max-height: 220px; }
+  .chart-card .section-title { margin-bottom: 12px; }
+
+  .chart-card canvas {
+    display: block;
+    height: 200px !important;
+    max-height: 200px;
+  }
 
   /* TABLE */
   .table-card {
@@ -391,19 +397,19 @@
   <div class="charts-grid">
     <div class="chart-card">
       <div class="section-title">Servicios más frecuentes</div>
-      <canvas id="chartServicios"></canvas>
+      <canvas id="chartServicios" height="200"></canvas>
     </div>
     <div class="chart-card">
       <div class="section-title">Motos por técnico</div>
-      <canvas id="chartTecnicos"></canvas>
+      <canvas id="chartTecnicos" height="200"></canvas>
     </div>
     <div class="chart-card">
       <div class="section-title">Ingresos por origen</div>
-      <canvas id="chartOrigen"></canvas>
+      <canvas id="chartOrigen" height="200"></canvas>
     </div>
     <div class="chart-card">
       <div class="section-title">Valor facturado por día</div>
-      <canvas id="chartValorDia"></canvas>
+      <canvas id="chartValorDia" height="200"></canvas>
     </div>
   </div>
 
