@@ -310,6 +310,10 @@
 
       <div class="conditional" id="valorUpsellField">
         <div class="field">
+          <label>Ítem upsell</label>
+          <input type="text" id="itemUpsell" placeholder="Ej. Aceite, Filtro, Guantes">
+        </div>
+        <div class="field">
           <label>Valor upsell</label>
           <input type="number" id="valorUpsell" placeholder="Ej. 50000" min="0">
         </div>
@@ -435,7 +439,10 @@
 
   document.getElementById('cerroUpsell').addEventListener('change', function() {
     document.getElementById('valorUpsellField').classList.toggle('visible', this.value === 'Sí');
-    if (this.value !== 'Sí') document.getElementById('valorUpsell').value = '';
+    if (this.value !== 'Sí') {
+      document.getElementById('itemUpsell').value = '';
+      document.getElementById('valorUpsell').value = '';
+    }
   });
 
   document.getElementById('entregaATiempo').addEventListener('change', function() {
@@ -477,8 +484,10 @@
       fields['Upsell cerrado'] = cerroUpsell === 'Sí';
 
       if (cerroUpsell === 'Sí') {
-        const valorUpsell = document.getElementById('valorUpsell').value.trim();
-        if (valorUpsell) fields['Ítem upsell'] = valorUpsell;
+        const itemUpsell = document.getElementById('itemUpsell').value.trim();
+        if (itemUpsell) fields['Ítem upsell'] = itemUpsell;
+        const valorUpsell = parseFloat(document.getElementById('valorUpsell').value);
+        if (valorUpsell > 0) fields['Valor upsell'] = valorUpsell;
       }
     }
 
