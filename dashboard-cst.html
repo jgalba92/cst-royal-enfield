@@ -520,6 +520,16 @@
         if (t) facturacionPorTecnico[t] = (facturacionPorTecnico[t] || 0) + (r['Valor final'] || 0);
       });
 
+      const ingresoByPlacaLocal = {};
+      ingresoRecords.forEach(r => { if (r['Placa']) ingresoByPlacaLocal[(r['Placa'] || '').toUpperCase()] = r; });
+
+      const retrasosPorTecnico = {};
+      salidaRecords.filter(r => r['Entrega'] === 'Retrasada').forEach(r => {
+        const ingresoRec = ingresoByPlacaLocal[(r['Placa'] || '').toUpperCase()];
+        const t = ingresoRec?.['Técnico asignado'] || r['Técnico entrega'];
+        if (t) retrasosPorTecnico[t] = (retrasosPorTecnico[t] || 0) + 1;
+      });
+
       const deltaEstimadoFinal = ingresoRecords
         .filter(r => r['SALIDA'] && r['SALIDA'].length > 0)
         .map(r => {
@@ -560,6 +570,7 @@
         valor_facturado_total: data.kpis.valorFacturado,
         ticket_promedio: data.kpis.ticketPromedio,
         facturacion_por_tecnico: facturacionPorTecnico,
+        retrasos_por_tecnico: retrasosPorTecnico,
         servicios_frecuentes: data.servicios.labels.map((l, i) => ({ servicio: l, cantidad: data.servicios.values[i] })),
         motos_por_tecnico: Object.fromEntries(data.tecnicos.labels.map((l, i) => [l, data.tecnicos.values[i]])),
         delta_estimado_final: deltaEstimadoFinal,
@@ -879,7 +890,8 @@
             facturacion_por_tecnico: dashboardData.rawContext?.facturacion_por_tecnico,
             origen_clientes: dashboardData.rawContext?.origen_clientes,
             upsells_cerrados: dashboardData.rawContext?.upsells_cerrados,
-            motos_en_taller_detalle: dashboardData.rawContext?.motos_en_taller_detalle
+            motos_en_taller_detalle: dashboardData.rawContext?.motos_en_taller_detalle,
+            retrasos_por_tecnico: dashboardData.rawContext?.retrasos_por_tecnico
           }
         }),
       });
@@ -887,8 +899,18 @@
       const data = await res.json();
       console.log('Chat worker response:', JSON.stringify(data));
       const reply = data.text || data.content?.[0]?.text || data.reply || 'Sin respuesta';
-      panelHistory.push({ role: 'assistant', content: reply });
-      addPanelMsg(reply, 'assistant');
+      const esRateLimit = reply.toLowerCase().includes('rate limit') || reply.toLowerCase().includes('limit reached');
+      const esCredito = reply.toLowerCase().includes('quota') || reply.toLowerCase().includes('billing');
+      let mensajeFinal;
+      if (esRateLimit) {
+        mensajeFinal = 'Demasiadas consultas seguidas. Espera 10 segundos e intenta de nuevo.';
+      } else if (esCredito) {
+        mensajeFinal = 'Límite del plan alcanzado. Intenta en unos minutos.';
+      } else {
+        mensajeFinal = reply;
+      }
+      panelHistory.push({ role: 'assistant', content: mensajeFinal });
+      addPanelMsg(mensajeFinal, 'assistant');
     } catch {
       thinking.remove();
       addPanelMsg('Error al conectar. Intenta de nuevo.', 'assistant');

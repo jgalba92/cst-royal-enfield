@@ -398,7 +398,8 @@
             facturacion_por_tecnico: tallerContext?.facturacion_por_tecnico,
             origen_clientes: tallerContext?.origen_clientes,
             upsells_cerrados: tallerContext?.upsells_cerrados,
-            motos_en_taller_detalle: tallerContext?.motos_en_taller_detalle
+            motos_en_taller_detalle: tallerContext?.motos_en_taller_detalle,
+            retrasos_por_tecnico: tallerContext?.retrasos_por_tecnico
           }
         }),
       });
@@ -409,9 +410,18 @@
 
       const data = await res.json();
       const reply = data.text || 'Sin respuesta';
-
-      chatHistory.push({ role: 'assistant', content: reply });
-      addMessage(reply, 'assistant');
+      const esRateLimit = reply.toLowerCase().includes('rate limit') || reply.toLowerCase().includes('limit reached');
+      const esCredito = reply.toLowerCase().includes('quota') || reply.toLowerCase().includes('billing');
+      let mensajeFinal;
+      if (esRateLimit) {
+        mensajeFinal = 'Demasiadas consultas seguidas. Espera 10 segundos e intenta de nuevo.';
+      } else if (esCredito) {
+        mensajeFinal = 'Límite del plan alcanzado. Intenta en unos minutos.';
+      } else {
+        mensajeFinal = reply;
+      }
+      chatHistory.push({ role: 'assistant', content: mensajeFinal });
+      addMessage(mensajeFinal, 'assistant');
 
     } catch (err) {
       thinkingEl.remove();
