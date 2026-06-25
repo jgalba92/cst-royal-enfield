@@ -254,6 +254,7 @@
       <div class="field">
         <label>Placa <span class="req">*</span></label>
         <input type="text" id="placa" placeholder="Ej. ABC12D" autocomplete="off" required>
+        <p id="placaError" style="display:none;color:var(--error);font-size:12px;margin-top:6px;"></p>
       </div>
 
       <div class="info-grid">
@@ -353,6 +354,68 @@
 <script>
   const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
 
+  let placaTimer = null;
+
+  function resetInfo() {
+    ['info-tipoCliente', 'info-tipoServicio', 'info-tecnico', 'info-valorEstimado'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = '—';
+      el.classList.remove('loaded');
+    });
+  }
+
+  function setPlacaError(msg) {
+    const el = document.getElementById('placaError');
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  async function buscarIngreso(placa) {
+    setPlacaError('');
+    resetInfo();
+    if (!placa) return;
+
+    try {
+      const res = await fetch(`${WORKER_URL}/buscar?placa=${encodeURIComponent(placa)}`);
+      const data = await res.json();
+
+      if (!res.ok || !data.found) {
+        setPlacaError('No se encontró ingreso abierto para esta placa');
+        return;
+      }
+
+      const f = data.fields;
+      const map = {
+        'info-tipoCliente':    f['Tipo cliente']     || '—',
+        'info-tipoServicio':   Array.isArray(f['Tipo servicio']) ? f['Tipo servicio'].join(', ') : (f['Tipo servicio'] || '—'),
+        'info-tecnico':        f['Técnico asignado'] || '—',
+        'info-valorEstimado':  f['Valor estimado'] != null ? '$' + Number(f['Valor estimado']).toLocaleString('es-CO') : '—',
+      };
+
+      Object.entries(map).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        el.textContent = val;
+        el.classList.add('loaded');
+      });
+
+    } catch (err) {
+      setPlacaError('Error al buscar la placa. Intenta de nuevo.');
+    }
+  }
+
+  document.getElementById('placa').addEventListener('input', function() {
+    clearTimeout(placaTimer);
+    const val = this.value.trim().toUpperCase();
+    if (!val) { resetInfo(); setPlacaError(''); return; }
+    placaTimer = setTimeout(() => buscarIngreso(val), 800);
+  });
+
+  document.getElementById('placa').addEventListener('blur', function() {
+    clearTimeout(placaTimer);
+    const val = this.value.trim().toUpperCase();
+    if (val) buscarIngreso(val);
+  });
+
   document.getElementById('ofrecioUpsell').addEventListener('change', function() {
     const ofrecio = this.value === 'Sí';
     document.getElementById('cerroUpsellField').classList.toggle('visible', ofrecio);
@@ -443,6 +506,8 @@
       document.getElementById('cerroUpsellField').classList.remove('visible');
       document.getElementById('valorUpsellField').classList.remove('visible');
       document.getElementById('razonRetrasoField').classList.remove('visible');
+      resetInfo();
+      setPlacaError('');
 
     } catch (err) {
       showToast('Error al registrar. Intenta de nuevo.', true);
