@@ -3,6 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+/* Guard de sesion: sin sesion valida -> login */
+(function(){
+  try{
+    var s = JSON.parse(sessionStorage.getItem("cst_session") || "null");
+    if(!s || !s.role){ location.replace("login.html"); }
+  }catch(e){ location.replace("login.html"); }
+})();
+</script>
 <title>Dashboard — CST Royal Enfield</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>

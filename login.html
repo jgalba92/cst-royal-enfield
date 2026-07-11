@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CST Royal Enfield — Acceso</title>
+<style>
+  :root{
+    --bg:#0f1216;
+    --panel:#171b21;
+    --panel-2:#1e242c;
+    --line:#2a323c;
+    --ink:#eef2f6;
+    --muted:#8b97a5;
+    --accent:#e2451f;        /* rojo Royal Enfield, sobrio */
+    --accent-ink:#ff6a44;
+    --ok:#3ec98a;
+    --radius:10px;
+    --sans:'Inter','Segoe UI',system-ui,sans-serif;
+    --mono:'JetBrains Mono','Consolas',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:var(--sans);
+    background:
+      radial-gradient(900px 500px at 80% -10%, rgba(226,69,31,.10), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .card{
+    width:100%; max-width:400px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .head{
+    padding:28px 28px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent-ink); font-weight:700; margin-bottom:10px;
+  }
+  .head h1{ font-size:21px; font-weight:650; letter-spacing:-.01em; }
+  .head p{ color:var(--muted); font-size:13px; margin-top:5px; }
+
+  .body{ padding:24px 28px 28px; }
+  label{
+    display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--muted); font-weight:600; margin-bottom:7px; margin-top:16px;
+  }
+  label:first-child{ margin-top:0; }
+  input, select{
+    width:100%; padding:12px 13px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-family:var(--sans); font-size:14px;
+    transition:border-color .15s;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--accent); }
+  .tecnico-wrap{ display:none; }
+  .tecnico-wrap.show{ display:block; }
+
+  button{
+    width:100%; margin-top:22px; padding:13px;
+    background:var(--accent); color:#fff; border:none; border-radius:8px;
+    font-family:var(--sans); font-size:14px; font-weight:650; cursor:pointer;
+    transition:background .15s;
+  }
+  button:hover{ background:#c93b18; }
+  button:focus-visible{ outline:2px solid var(--accent-ink); outline-offset:2px; }
+
+  .err{
+    display:none; margin-top:14px; padding:10px 12px;
+    background:rgba(226,69,31,.10); border:1px solid rgba(226,69,31,.35);
+    border-radius:8px; color:#ff8a6a; font-size:13px;
+  }
+  .err.show{ display:block; }
+
+  .foot{
+    padding:14px 28px; border-top:1px solid var(--line);
+    font-size:11px; color:var(--muted); font-family:var(--mono);
+    display:flex; justify-content:space-between;
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;} }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <div class="brand">CST · Royal Enfield Zona T</div>
+      <h1>Acceso al sistema</h1>
+      <p>Ingresa con tu usuario y clave asignada.</p>
+    </div>
+    <div class="body">
+      <label for="user">Usuario</label>
+      <input id="user" type="text" autocomplete="username" placeholder="usuario" autofocus>
+
+      <label for="pass">Clave</label>
+      <input id="pass" type="password" autocomplete="current-password" placeholder="••••••••">
+
+      <div class="tecnico-wrap" id="tecnicoWrap">
+        <label for="tecnico">¿Cuál técnico eres?</label>
+        <select id="tecnico">
+          <option value="Nelson">Nelson</option>
+          <option value="Eduin">Eduin</option>
+          <option value="Harold">Harold</option>
+          <option value="Camilo">Camilo</option>
+          <option value="Daniel">Daniel</option>
+          <option value="Edisson">Edisson</option>
+        </select>
+      </div>
+
+      <button id="btn">Entrar</button>
+      <div class="err" id="err">Usuario o clave incorrectos.</div>
+    </div>
+    <div class="foot">
+      <span>v0.1 · prototipo</span>
+      <span>uberflug</span>
+    </div>
+  </div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   PROTOTIPO: credenciales de demo en el frontend.
+   En producción esto NO va aquí: el Worker valida user/clave,
+   devuelve un JWT firmado, y este archivo solo guarda el token.
+   Los 4 usuarios genéricos representan los 4 roles.
+   ───────────────────────────────────────────────────────────── */
+const USERS = {
+  tecnico:  { pass: "taller2026", role: "tecnico",  redirect: "dashboard-tecnico.html" },
+  vendedor: { pass: "taller2026", role: "vendedor", redirect: "ingreso-cst.html" },
+  admin:    { pass: "taller2026", role: "admin",    redirect: "dashboard-admin.html" },
+  manager:  { pass: "taller2026", role: "manager",  redirect: "dashboard-admin.html" }
+};
+
+const userEl = document.getElementById("user");
+const passEl = document.getElementById("pass");
+const tecEl  = document.getElementById("tecnico");
+const tecWrap= document.getElementById("tecnicoWrap");
+const errEl  = document.getElementById("err");
+const btn    = document.getElementById("btn");
+
+// muestra el selector de técnico solo cuando el usuario es "tecnico"
+userEl.addEventListener("input", () => {
+  const isTec = userEl.value.trim().toLowerCase() === "tecnico";
+  tecWrap.classList.toggle("show", isTec);
+});
+
+function entrar(){
+  const u = userEl.value.trim().toLowerCase();
+  const p = passEl.value;
+  const record = USERS[u];
+
+  if(!record || record.pass !== p){
+    errEl.classList.add("show");
+    return;
+  }
+  errEl.classList.remove("show");
+
+  // sesión de prototipo. En prod: guardar el JWT del Worker, no esto.
+  const session = { role: record.role, user: u };
+  if(record.role === "tecnico"){
+    session.tecnico = tecEl.value;   // fija el técnico elegido
+  }
+  sessionStorage.setItem("cst_session", JSON.stringify(session));
+  window.location.href = record.redirect;
+}
+
+btn.addEventListener("click", entrar);
+passEl.addEventListener("keydown", e => { if(e.key === "Enter") entrar(); });
+</script>
+</body>
+</html>

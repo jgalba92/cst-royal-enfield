@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CST · Jefe de taller</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --panel-2:#1e242c; --line:#2a323c;
+    --ink:#eef2f6; --muted:#8b97a5; --accent:#e2451f; --accent-ink:#ff6a44;
+    --ok:#3ec98a; --warn:#f0b23e; --bad:#e2451f; --radius:10px;
+    --sans:'Inter','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 60px;}
+  .top{display:flex;justify-content:space-between;align-items:center;
+    padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+  .top .who{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;}
+  .top h1{font-size:22px;font-weight:650;margin-top:4px;}
+  .logout{background:none;border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+  .logout:hover{border-color:var(--accent);color:var(--ink);}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:26px;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;}
+  .kpi .val{font-size:28px;font-weight:700;margin-top:8px;letter-spacing:-.02em;}
+  .kpi .val.warn{color:var(--warn);}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 12px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  th,td{padding:12px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--line);}
+  th{background:var(--panel-2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+  th.num,td.num{text-align:center;}
+  tr:last-child td{border-bottom:none;}
+  td.nombre{font-weight:600;}
+  .pill{display:inline-block;min-width:34px;font-family:var(--mono);font-size:13px;padding:3px 9px;border-radius:99px;text-align:center;}
+  .pill.ok{background:rgba(62,201,138,.12);color:var(--ok);}
+  .pill.warn{background:rgba(240,178,62,.12);color:var(--warn);}
+  .pill.bad{background:rgba(226,69,31,.14);color:var(--accent-ink);}
+  .pct-bar{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-top:5px;}
+  .pct-bar i{display:block;height:100%;background:var(--ok);}
+  .loading,.empty{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
+  .foot-note{margin-top:14px;font-size:12px;color:var(--muted);}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="who">Jefe de taller</div>
+        <h1>Rendimiento del equipo</h1>
+      </div>
+      <button class="logout" id="logout">Salir</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="label">Motos atendidas</div><div class="val" id="k-total">—</div></div>
+      <div class="kpi"><div class="label">Entregas a tiempo</div><div class="val" id="k-ontime">—</div></div>
+      <div class="kpi"><div class="label">Retrasos</div><div class="val warn" id="k-delay">—</div></div>
+      <div class="kpi"><div class="label">En taller ahora</div><div class="val" id="k-now">—</div></div>
+    </div>
+
+    <h2>Por técnico</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Técnico</th>
+          <th class="num">Atendidas</th>
+          <th class="num">A tiempo</th>
+          <th class="num">Retrasos</th>
+          <th>Cumplimiento</th>
+          <th class="num">En taller ahora</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="6" class="loading">Cargando…</td></tr>
+      </tbody>
+    </table>
+    <div class="foot-note">Una moto está "en taller ahora" si tiene ingreso pero aún no tiene salida registrada.</div>
+  </div>
+
+<script>
+const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
+const TECNICOS = ["Nelson","Eduin","Harold","Camilo","Daniel","Edisson"];
+
+/* Guard de sesion: solo admin y manager */
+const raw = sessionStorage.getItem("cst_session");
+if(!raw){ window.location.href = "login.html"; }
+const session = JSON.parse(raw || "{}");
+if(session.role !== "admin" && session.role !== "manager"){
+  window.location.href = "login.html";
+}
+document.getElementById("logout").addEventListener("click", () => {
+  sessionStorage.removeItem("cst_session");
+  window.location.href = "login.html";
+});
+
+async function cargar(){
+  try{
+    const res = await fetch(API + "/dashboard");
+    const data = await res.json();
+    const ingresos = (data.ingreso && data.ingreso.records) || [];
+    const salidas  = (data.salida  && data.salida.records)  || [];
+
+    // agrega por tecnico
+    const stats = {};
+    TECNICOS.forEach(t => stats[t] = { atendidas:0, ontime:0, retrasos:0, ahora:0 });
+
+    // salidas = motos atendidas (usa el lookup Tecnico (de ingreso))
+    salidas.forEach(r => {
+      const f = r.fields || {};
+      let t = f["Técnico (de ingreso)"];
+      if(Array.isArray(t)) t = t[0];
+      if(!stats[t]) return;
+      stats[t].atendidas++;
+      if(f["Entrega"] === "Retrasada") stats[t].retrasos++;
+      else if(f["Entrega"] === "A tiempo") stats[t].ontime++;
+    });
+
+    // en taller ahora = ingresos sin salida vinculada
+    ingresos.forEach(r => {
+      const f = r.fields || {};
+      const tieneSalida = Array.isArray(f["SALIDA"]) && f["SALIDA"].length > 0;
+      const t = f["Técnico asignado"];
+      if(!tieneSalida && stats[t]) stats[t].ahora++;
+    });
+
+    // totales
+    let T={atendidas:0,ontime:0,retrasos:0,ahora:0};
+    TECNICOS.forEach(t=>{ const s=stats[t]; T.atendidas+=s.atendidas; T.ontime+=s.ontime; T.retrasos+=s.retrasos; T.ahora+=s.ahora; });
+    document.getElementById("k-total").textContent  = T.atendidas;
+    document.getElementById("k-ontime").textContent = T.ontime;
+    document.getElementById("k-delay").textContent  = T.retrasos;
+    document.getElementById("k-now").textContent    = T.ahora;
+
+    // filas ordenadas por atendidas desc
+    const filas = TECNICOS.map(t => ({nombre:t, ...stats[t]}))
+      .sort((a,b)=> b.atendidas - a.atendidas);
+
+    document.getElementById("rows").innerHTML = filas.map(s => {
+      const cerradas = s.ontime + s.retrasos;
+      const pct = cerradas ? Math.round(s.ontime/cerradas*100) : 0;
+      const pctTxt = cerradas ? pct + "%" : "—";
+      const delayClass = s.retrasos === 0 ? "ok" : (s.retrasos <= 1 ? "warn" : "bad");
+      return '<tr>' +
+        '<td class="nombre">' + s.nombre + '</td>' +
+        '<td class="num">' + s.atendidas + '</td>' +
+        '<td class="num">' + s.ontime + '</td>' +
+        '<td class="num"><span class="pill ' + delayClass + '">' + s.retrasos + '</span></td>' +
+        '<td>' + pctTxt + '<div class="pct-bar"><i style="width:' + pct + '%"></i></div></td>' +
+        '<td class="num">' + (s.ahora || '—') + '</td>' +
+      '</tr>';
+    }).join("");
+
+  }catch(e){
+    document.getElementById("rows").innerHTML =
+      '<tr><td colspan="6" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
+  }
+}
+cargar();
