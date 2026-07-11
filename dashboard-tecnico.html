@@ -70,18 +70,20 @@ const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 
 /* Guard de sesion */
 const raw = sessionStorage.getItem("cst_session");
-if(!raw){ window.location.href = "login.html"; }
 const session = JSON.parse(raw || "{}");
 if(session.role !== "tecnico" || !session.tecnico){
-  window.location.href = "login.html";
+  window.location.replace("login.html");
 }
 const nombre = session.tecnico;
 document.getElementById("who").textContent = "Tecnico · " + nombre;
 document.getElementById("titulo").textContent = "Hola, " + nombre;
-document.getElementById("logout").addEventListener("click", () => {
-  sessionStorage.removeItem("cst_session");
-  window.location.href = "login.html";
-});
+const logoutBtn = document.getElementById("logout");
+if(logoutBtn){
+  logoutBtn.addEventListener("click", () => {
+    sessionStorage.removeItem("cst_session");
+    window.location.replace("login.html");
+  });
+}
 
 const cop = n => "$" + Number(n||0).toLocaleString("es-CO");
 

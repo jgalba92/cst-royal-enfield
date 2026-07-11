@@ -140,6 +140,23 @@
     color: var(--text-muted);
   }
 
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+  .logout {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  .logout:hover { border-color: var(--red); color: var(--text); }
+
   @media (max-width: 380px) {
     .nav-grid { grid-template-columns: 1fr; }
   }
@@ -147,6 +164,10 @@
 </head>
 <body>
 <div class="container">
+
+  <div class="topbar">
+    <button class="logout" id="logout" type="button">Salir</button>
+  </div>
 
   <div class="header">
     <div class="logo-icon">
@@ -158,7 +179,7 @@
 
   <div class="nav-grid">
 
-    <a class="nav-card" href="ingreso-cst.html">
+    <a class="nav-card" href="ingreso-cst.html" data-roles="vendedor,admin,manager">
       <div class="nav-icon red">
         <svg viewBox="0 0 24 24"><path d="M19 11H7.83l4.88-4.88c.39-.39.39-1.03 0-1.42-.39-.39-1.02-.39-1.41 0l-6.59 6.59c-.39.39-.39 1.02 0 1.41l6.59 6.59c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L7.83 13H19c.55 0 1-.45 1-1s-.45-1-1-1z"/></svg>
       </div>
@@ -169,7 +190,7 @@
       <div class="nav-arrow">→</div>
     </a>
 
-    <a class="nav-card" href="salida-cst.html">
+    <a class="nav-card" href="salida-cst.html" data-roles="vendedor,admin,manager">
       <div class="nav-icon gold">
         <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </div>
@@ -180,7 +201,18 @@
       <div class="nav-arrow">→</div>
     </a>
 
-    <a class="nav-card" href="dashboard-cst.html">
+    <a class="nav-card" href="dashboard-admin.html" data-roles="admin,manager">
+      <div class="nav-icon gold">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </div>
+      <div>
+        <div class="nav-label">Datos del taller</div>
+        <div class="nav-desc">Rendimiento del equipo de técnicos</div>
+      </div>
+      <div class="nav-arrow">→</div>
+    </a>
+
+    <a class="nav-card" href="dashboard-cst.html" data-roles="manager">
       <div class="nav-icon dark">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
       </div>
@@ -191,7 +223,7 @@
       <div class="nav-arrow">→</div>
     </a>
 
-    <a class="nav-card" href="agente-cst.html">
+    <a class="nav-card" href="agente-cst.html" data-roles="manager">
       <div class="nav-icon purple">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/></svg>
       </div>
@@ -207,6 +239,30 @@
   <div class="footer">CST Royal Enfield Zona T · 2026</div>
 
 </div>
+
+<script>
+/* Menu por rol: oculta las nav-card que no correspondan al rol de la sesion */
+(function(){
+  var s;
+  try{ s = JSON.parse(sessionStorage.getItem("cst_session") || "null"); }
+  catch(e){ s = null; }
+  if(!s || !s.role){ location.replace("login.html"); return; }
+
+  var role = s.role;
+  document.querySelectorAll(".nav-card").forEach(function(card){
+    var roles = (card.getAttribute("data-roles") || "").split(",").map(function(r){ return r.trim(); });
+    if(roles.indexOf(role) === -1){ card.style.display = "none"; }
+  });
+
+  var logout = document.getElementById("logout");
+  if(logout){
+    logout.addEventListener("click", function(){
+      sessionStorage.removeItem("cst_session");
+      window.location.replace("login.html");
+    });
+  }
+})();
+</script>
 
 </body>
 </html>

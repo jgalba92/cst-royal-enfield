@@ -8,7 +8,7 @@
 (function(){
   try{
     var s = JSON.parse(sessionStorage.getItem("cst_session") || "null");
-    if(!s || !s.role){ location.replace("login.html"); }
+    if(!s || ["vendedor","admin","manager"].indexOf(s.role) === -1){ location.replace("login.html"); }
   }catch(e){ location.replace("login.html"); }
 })();
 </script>
