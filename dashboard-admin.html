@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="auth.js?v=2"></script>
+<script src="auth.js?v=3"></script>
 <title>CST · Datos del taller</title>
 <style>
   :root{
@@ -89,7 +89,7 @@ const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 const TECNICOS = ["Nelson","Eduin","Harold","Camilo","Daniel","Edisson"];
 
 /* Guard de sesion: solo admin y manager */
-guard(["admin","manager"]);
+guard(["admin","manager","developer"]);
 const logoutBtn = document.getElementById("logout");
 if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
 

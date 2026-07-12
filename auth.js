@@ -79,9 +79,13 @@ function mostrarBannerImpersonacion(){
   var txt = document.createElement("span");
   txt.textContent = "Viendo como " + etiqueta;
 
+  var real = {};
+  try{ real = JSON.parse(sessionStorage.getItem("cst_session_real") || "{}"); }catch(e){}
+  var realRol = real.rol || real.role || "manager";
+
   var btn = document.createElement("button");
   btn.type = "button";
-  btn.textContent = "Volver a manager";
+  btn.textContent = "Volver a " + realRol;
   btn.style.cssText = "background:#1A1A1A;color:#F0F0F0;border:none;border-radius:6px;" +
     "padding:6px 12px;font:inherit;font-weight:600;cursor:pointer";
   btn.addEventListener("click", volverAManager);
