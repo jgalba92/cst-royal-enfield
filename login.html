@@ -61,8 +61,6 @@
     transition:border-color .15s;
   }
   input:focus, select:focus{ outline:none; border-color:var(--accent); }
-  .tecnico-wrap{ display:none; }
-  .tecnico-wrap.show{ display:block; }
 
   button{
     width:100%; margin-top:22px; padding:13px;
@@ -104,18 +102,6 @@
         <label for="pass">Clave</label>
         <input id="pass" type="password" autocomplete="current-password" placeholder="••••••••">
 
-        <div class="tecnico-wrap" id="tecnicoWrap">
-          <label for="tecnico">¿Cuál técnico eres?</label>
-          <select id="tecnico">
-            <option value="Nelson">Nelson</option>
-            <option value="Eduin">Eduin</option>
-            <option value="Harold">Harold</option>
-            <option value="Camilo">Camilo</option>
-            <option value="Daniel">Daniel</option>
-            <option value="Edisson">Edisson</option>
-          </select>
-        </div>
-
         <button id="btn">Entrar</button>
         <div class="err" id="err">Usuario o clave incorrectos.</div>
       </div>
@@ -150,8 +136,6 @@ const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 
 const userEl   = document.getElementById("user");
 const passEl   = document.getElementById("pass");
-const tecEl     = document.getElementById("tecnico");
-const tecWrap   = document.getElementById("tecnicoWrap");
 const errEl     = document.getElementById("err");
 const btn       = document.getElementById("btn");
 const loginWrap = document.getElementById("loginWrap");
@@ -164,12 +148,6 @@ const btnCambiar  = document.getElementById("btnCambiar");
 const errCambio   = document.getElementById("errCambio");
 
 let sesionPendiente = null;   // sesión guardada mientras se fuerza cambio de clave
-
-// muestra el selector de técnico solo cuando el usuario es "tecnico"
-userEl.addEventListener("input", () => {
-  const isTec = userEl.value.trim().toLowerCase() === "tecnico";
-  tecWrap.classList.toggle("show", isTec);
-});
 
 function mostrarError(el, msg){
   el.textContent = msg;
@@ -185,7 +163,6 @@ async function entrar(){
   const usuario  = userEl.value.trim();
   const password = passEl.value;
   const body = { usuario, password };
-  if(usuario.toLowerCase() === "tecnico"){ body.tecnico = tecEl.value; }
 
   btn.disabled = true;
   try{

@@ -153,6 +153,36 @@ guard(["vendedor","admin","manager"]);
   }
   .logout:hover { border-color: var(--red); color: var(--text); }
 
+  .veras-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .veras-bar label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--gold);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .veras-bar select {
+    flex: 1;
+    background: #2E2E2E;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 9px 11px;
+  }
+  .veras-bar select:focus { outline: none; border-color: var(--red); }
+
   @media (max-width: 380px) {
     .nav-grid { grid-template-columns: 1fr; }
   }
@@ -160,6 +190,21 @@ guard(["vendedor","admin","manager"]);
 </head>
 <body>
 <div class="container">
+
+  <div class="veras-bar" id="verasBar" style="display:none">
+    <label for="verasSel">Ver como</label>
+    <select id="verasSel">
+      <option value="" disabled selected>Elegir…</option>
+      <option value="admin">Admin</option>
+      <option value="vendedor">Vendedor</option>
+      <option value="tec:Nelson">Nelson</option>
+      <option value="tec:Eduin">Eduin</option>
+      <option value="tec:Harold">Harold</option>
+      <option value="tec:Camilo">Camilo</option>
+      <option value="tec:Daniel">Daniel</option>
+      <option value="tec:Edisson">Edisson</option>
+    </select>
+  </div>
 
   <div class="topbar">
     <button class="logout" id="logout" type="button">Salir</button>
@@ -242,6 +287,7 @@ guard(["vendedor","admin","manager"]);
 <script>
 /* Menu por rol: oculta las nav-card que no correspondan al rol de la sesion */
 (function(){
+  var API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
   var s = getSession();
   if(!s){ location.replace("login.html"); return; }
 
@@ -253,6 +299,47 @@ guard(["vendedor","admin","manager"]);
 
   var logoutBtn = document.getElementById("logout");
   if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
+
+  /* "Ver como": solo el manager puede impersonar otros roles */
+  if(role === "manager"){
+    var bar = document.getElementById("verasBar");
+    var sel = document.getElementById("verasSel");
+    bar.style.display = "flex";
+    sel.addEventListener("change", function(){
+      var valor = sel.value;
+      if(!valor) return;
+      verComo(valor);
+    });
+  }
+
+  async function verComo(valor){
+    var real = sessionStorage.getItem("cst_session");
+    var payload = (valor.indexOf("tec:") === 0)
+      ? { rol: "tecnico", tecnico: valor.slice(4) }
+      : { rol: valor };
+
+    // guarda la sesion real antes de impersonar
+    sessionStorage.setItem("cst_session_real", real);
+    try{
+      var res = await authFetch(API + "/impersonar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json();
+      if(!res.ok || data.error){
+        sessionStorage.removeItem("cst_session_real");
+        alert(data.error || "No se pudo cambiar de vista.");
+        return;
+      }
+      var nueva = { token: data.token, rol: data.rol, tecnico: data.tecnico };
+      sessionStorage.setItem("cst_session", JSON.stringify(nueva));
+      location.href = (nueva.rol === "tecnico") ? "dashboard-tecnico.html" : "index.html";
+    }catch(e){
+      sessionStorage.removeItem("cst_session_real");
+      alert("Error de conexion. Intenta de nuevo.");
+    }
+  }
 })();
 </script>
 
