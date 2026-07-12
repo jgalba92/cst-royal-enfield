@@ -3,14 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js"></script>
 <script>
 /* Guard de rol: solo manager */
-(function(){
-  try{
-    var s = JSON.parse(sessionStorage.getItem("cst_session") || "null");
-    if(!s || s.role !== "manager"){ location.replace("login.html"); }
-  }catch(e){ location.replace("login.html"); }
-})();
+guard(["manager"]);
 </script>
 <title>Dashboard — CST Royal Enfield</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -517,7 +513,7 @@
       const params = new URLSearchParams({ fechaInicio: filters.fechaInicio, fechaFin: fechaFinParam });
       if (filters.tecnico) params.set('tecnico', filters.tecnico);
 
-      const res = await fetch(`${WORKER_URL}/dashboard?${params}`);
+      const res = await authFetch(`${WORKER_URL}/dashboard?${params}`);
       const raw = await res.json();
 
       const ingresoRecords = (raw.ingreso?.records || []).map(r => ({ ...r.fields, createdTime: r.createdTime }));
@@ -881,7 +877,7 @@
     panelHistory.push({ role: 'user', content: msg });
     const thinking = addPanelMsg('...', 'assistant');
     try {
-      const res = await fetch(`${WORKER_URL}/chat`, {
+      const res = await authFetch(`${WORKER_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

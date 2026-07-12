@@ -3,14 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js"></script>
 <script>
-/* Guard de sesion: sin sesion valida -> login */
-(function(){
-  try{
-    var s = JSON.parse(sessionStorage.getItem("cst_session") || "null");
-    if(!s || ["vendedor","admin","manager"].indexOf(s.role) === -1){ location.replace("login.html"); }
-  }catch(e){ location.replace("login.html"); }
-})();
+/* Guard de sesion: vendedor, admin o manager */
+guard(["vendedor","admin","manager"]);
 </script>
 <title>Ingreso de Moto — CST Royal Enfield</title>
 <style>
@@ -502,7 +498,7 @@
     btn.textContent = 'Registrando...';
 
     try {
-      const res = await fetch(WORKER_URL, {
+      const res = await authFetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tableId: 'tblVfL0uCihLTIQ9l', fields: fields })

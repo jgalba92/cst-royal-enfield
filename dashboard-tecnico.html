@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js"></script>
 <title>CST · Mi taller</title>
 <style>
   :root{
@@ -68,28 +69,19 @@
 <script>
 const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 
-/* Guard de sesion */
-const raw = sessionStorage.getItem("cst_session");
-const session = JSON.parse(raw || "{}");
-if(session.role !== "tecnico" || !session.tecnico){
-  window.location.replace("login.html");
-}
-const nombre = session.tecnico;
+/* Guard de sesion: solo tecnico */
+const session = guard(["tecnico"]);
+const nombre = (session && session.tecnico) || "";
 document.getElementById("who").textContent = "Tecnico · " + nombre;
 document.getElementById("titulo").textContent = "Hola, " + nombre;
 const logoutBtn = document.getElementById("logout");
-if(logoutBtn){
-  logoutBtn.addEventListener("click", () => {
-    sessionStorage.removeItem("cst_session");
-    window.location.replace("login.html");
-  });
-}
+if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
 
 const cop = n => "$" + Number(n||0).toLocaleString("es-CO");
 
 async function cargar(){
   try{
-    const res = await fetch(API + "/dashboard?tecnico=" + encodeURIComponent(nombre));
+    const res = await authFetch(API + "/dashboard");
     const data = await res.json();
     const records = (data && data.ingreso && data.ingreso.records) || [];
 

@@ -3,14 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js"></script>
 <script>
-/* Guard de sesion: sin sesion valida -> login */
-(function(){
-  try{
-    var s = JSON.parse(sessionStorage.getItem("cst_session") || "null");
-    if(!s || !s.role){ location.replace("login.html"); }
-  }catch(e){ location.replace("login.html"); }
-})();
+/* Guard de sesion: vendedor, admin o manager */
+guard(["vendedor","admin","manager"]);
 </script>
 <title>CST Royal Enfield — Sistema Operativo</title>
 <style>
@@ -243,24 +239,17 @@
 <script>
 /* Menu por rol: oculta las nav-card que no correspondan al rol de la sesion */
 (function(){
-  var s;
-  try{ s = JSON.parse(sessionStorage.getItem("cst_session") || "null"); }
-  catch(e){ s = null; }
-  if(!s || !s.role){ location.replace("login.html"); return; }
+  var s = getSession();
+  if(!s){ location.replace("login.html"); return; }
 
-  var role = s.role;
+  var role = s.rol || s.role;
   document.querySelectorAll(".nav-card").forEach(function(card){
     var roles = (card.getAttribute("data-roles") || "").split(",").map(function(r){ return r.trim(); });
     if(roles.indexOf(role) === -1){ card.style.display = "none"; }
   });
 
-  var logout = document.getElementById("logout");
-  if(logout){
-    logout.addEventListener("click", function(){
-      sessionStorage.removeItem("cst_session");
-      window.location.replace("login.html");
-    });
-  }
+  var logoutBtn = document.getElementById("logout");
+  if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
 })();
 </script>
 

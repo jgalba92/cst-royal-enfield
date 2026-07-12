@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js"></script>
 <title>CST · Datos del taller</title>
 <style>
   :root{
@@ -85,22 +86,13 @@ const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 const TECNICOS = ["Nelson","Eduin","Harold","Camilo","Daniel","Edisson"];
 
 /* Guard de sesion: solo admin y manager */
-const raw = sessionStorage.getItem("cst_session");
-const session = JSON.parse(raw || "null");
-if(!session || (session.role !== "admin" && session.role !== "manager")){
-  window.location.replace("login.html");
-}
+guard(["admin","manager"]);
 const logoutBtn = document.getElementById("logout");
-if(logoutBtn){
-  logoutBtn.addEventListener("click", () => {
-    sessionStorage.removeItem("cst_session");
-    window.location.replace("login.html");
-  });
-}
+if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
 
 async function cargar(){
   try{
-    const res = await fetch(API + "/dashboard");
+    const res = await authFetch(API + "/dashboard");
     const data = await res.json();
     const ingresos = (data.ingreso && data.ingreso.records) || [];
     const salidas  = (data.salida  && data.salida.records)  || [];

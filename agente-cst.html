@@ -3,14 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js"></script>
 <script>
-/* Guard de sesion: sin sesion valida -> login */
-(function(){
-  try{
-    var s = JSON.parse(sessionStorage.getItem("cst_session") || "null");
-    if(!s || s.role !== "manager"){ location.replace("login.html"); }
-  }catch(e){ location.replace("login.html"); }
-})();
+/* Guard de rol: solo manager */
+guard(["manager"]);
 </script>
 <title>Agente IA — CST Royal Enfield</title>
 <style>
@@ -293,7 +289,7 @@
 
   async function loadContext() {
     try {
-      const res = await fetch(`${WORKER_URL}/dashboard`);
+      const res = await authFetch(`${WORKER_URL}/dashboard`);
       const data = await res.json();
       const salidas = data.salida?.records || [];
       const ingresos = data.ingreso?.records || [];
@@ -421,7 +417,7 @@
     const thinkingEl = addMessage('Pensando...', 'assistant', 'thinking');
 
     try {
-      const res = await fetch(`${WORKER_URL}/chat`, {
+      const res = await authFetch(`${WORKER_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
