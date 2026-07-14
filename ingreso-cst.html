@@ -403,13 +403,9 @@ guard(["vendedor","admin","manager","developer"]);
           </select>
         </div>
         <div class="field">
-          <label>Quién registra <span class="req">*</span></label>
-          <select id="quienRegistra" required>
-            <option value="">Selecciona</option>
-            <option>Sergio</option>
-            <option>Alejandro</option>
-            <option>Andres</option>
-          </select>
+          <label>Quién registra</label>
+          <input type="text" id="quienRegistra" readonly placeholder="—"
+                 style="background:#262626;color:var(--text-muted);cursor:default">
         </div>
       </div>
     </div>
@@ -431,6 +427,16 @@ guard(["vendedor","admin","manager","developer"]);
 
 <script>
   const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
+
+  // "Quién registra" se deriva del rol del usuario logueado, no se elige a mano.
+  // admin -> Sergio, vendedor -> Alejandro. (Andres queda fuera por ahora.)
+  const REGISTRA_POR_ROL = { admin: 'Sergio', vendedor: 'Alejandro' };
+  function setQuienRegistra() {
+    const s = (typeof getSession === 'function' ? getSession() : null) || {};
+    const rol = s.rol || s.role || '';
+    document.getElementById('quienRegistra').value = REGISTRA_POR_ROL[rol] || '';
+  }
+  setQuienRegistra();
 
   // Placa duplicada: si ya hay un ingreso ABIERTO para esa placa (aún sin salida),
   // avisamos y bloqueamos el registro para no crear un segundo ingreso por error.
@@ -568,6 +574,7 @@ guard(["vendedor","admin","manager","developer"]);
 
       showToast('Ingreso registrado correctamente');
       document.getElementById('ingresoForm').reset();
+      setQuienRegistra();
       document.getElementById('fechaHoraField').classList.remove('visible');
       document.getElementById('accesoriosFields').classList.remove('visible');
       document.querySelectorAll('.check-item').forEach(el => el.classList.remove('checked'));
