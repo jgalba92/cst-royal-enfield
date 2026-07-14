@@ -268,6 +268,8 @@ guard(["vendedor","admin","manager","developer"]);
     </div>
   </div>
 
+  <a href="corregir.html" style="display:block;font-size:12px;color:var(--text-muted);text-decoration:none;margin:-14px 0 16px">¿Necesitas corregir un registro ya guardado? <span style="color:var(--gold);font-weight:600">Solicitar corrección →</span></a>
+
   <form id="ingresoForm" novalidate>
 
     <!-- PLACA + TIMESTAMP -->
@@ -275,6 +277,7 @@ guard(["vendedor","admin","manager","developer"]);
       <div class="field">
         <label>Placa <span class="req">*</span></label>
         <input type="text" id="placa" placeholder="Ej. ABC12D" autocomplete="off" required>
+        <p id="placaDuplicada" style="display:none;color:var(--error);font-size:12px;margin-top:8px;line-height:1.5;"></p>
       </div>
 
       <div class="field">
@@ -434,6 +437,54 @@ guard(["vendedor","admin","manager","developer"]);
 <script>
   const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
 
+  // Placa duplicada: si ya hay un ingreso ABIERTO para esa placa (aún sin salida),
+  // avisamos y bloqueamos el registro para no crear un segundo ingreso por error.
+  let placaDuplicadaActiva = false;
+  let placaDupTimer = null;
+  const placaInput = document.getElementById('placa');
+  const placaDupMsg = document.getElementById('placaDuplicada');
+
+  function limpiarAvisoDuplicada() {
+    placaDuplicadaActiva = false;
+    placaDupMsg.style.display = 'none';
+    placaDupMsg.innerHTML = '';
+  }
+
+  async function verificarPlacaDuplicada(placa) {
+    if (!placa) { limpiarAvisoDuplicada(); return; }
+    try {
+      const res = await authFetch(`${WORKER_URL}/buscar?placa=${encodeURIComponent(placa)}`);
+      const data = await res.json();
+      const yaExiste = res.ok && data.records && data.records.length > 0;
+      if (yaExiste) {
+        placaDuplicadaActiva = true;
+        const f = data.records[0].fields;
+        placaDupMsg.innerHTML =
+          'Ya hay un ingreso abierto para esta placa (técnico: ' + (f['Técnico asignado'] || '—') + '). ' +
+          'Si la moto ya está en el sistema, ve a <a href="salida-cst.html" style="color:var(--gold)">Salida</a> para cerrarlo, ' +
+          'o a <a href="corregir.html?placa=' + encodeURIComponent(placa) + '" style="color:var(--gold)">Corregir</a> si un dato quedó mal.';
+        placaDupMsg.style.display = 'block';
+      } else {
+        limpiarAvisoDuplicada();
+      }
+    } catch (e) {
+      // si falla la verificación no bloqueamos el registro, solo no avisamos
+      limpiarAvisoDuplicada();
+    }
+  }
+
+  placaInput.addEventListener('input', function() {
+    clearTimeout(placaDupTimer);
+    const val = this.value.trim().toUpperCase();
+    if (!val) { limpiarAvisoDuplicada(); return; }
+    placaDupTimer = setTimeout(() => verificarPlacaDuplicada(val), 700);
+  });
+  placaInput.addEventListener('blur', function() {
+    clearTimeout(placaDupTimer);
+    const val = this.value.trim().toUpperCase();
+    if (val) verificarPlacaDuplicada(val);
+  });
+
   // Condicional timestamp
   document.getElementById('ingresandoAhora').addEventListener('change', function() {
     const field = document.getElementById('fechaHoraField');
@@ -460,6 +511,11 @@ guard(["vendedor","admin","manager","developer"]);
 
     if (!placa || !ingresandoAhora) {
       showToast('Completa los campos requeridos', true);
+      return;
+    }
+
+    if (placaDuplicadaActiva) {
+      showToast('Ya hay un ingreso abierto para esta placa. Revisa el aviso arriba.', true);
       return;
     }
 
@@ -520,6 +576,7 @@ guard(["vendedor","admin","manager","developer"]);
       document.getElementById('fechaHoraField').classList.remove('visible');
       document.getElementById('accesoriosFields').classList.remove('visible');
       document.querySelectorAll('.check-item').forEach(el => el.classList.remove('checked'));
+      limpiarAvisoDuplicada();
 
     } catch (err) {
       showToast('Error al registrar. Intenta de nuevo.', true);
