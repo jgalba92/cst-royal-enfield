@@ -315,6 +315,12 @@ guard(["vendedor","admin","manager","developer"]);
           </select>
         </div>
       </div>
+      <div class="field" style="margin-top:16px">
+        <label class="check-item" id="chk-reingreso" style="display:flex">
+          <input type="checkbox" id="reingreso" onchange="this.closest('.check-item').classList.toggle('checked', this.checked)">
+          <span>Es reingreso — misma moto, mismo problema no resuelto antes</span>
+        </label>
+      </div>
     </div>
 
     <!-- SERVICIO -->
@@ -482,6 +488,7 @@ guard(["vendedor","admin","manager","developer"]);
       'Técnico asignado': document.getElementById('tecnicoAsignado').value,
       'Quién registra': document.getElementById('quienRegistra').value,
       'Comentarios ingreso': document.getElementById('comentariosIngreso').value,
+      'Re-ingreso': document.getElementById('reingreso').checked,
     };
 
     const valorEstimado = parseFloat(document.getElementById('valorEstimado').value);

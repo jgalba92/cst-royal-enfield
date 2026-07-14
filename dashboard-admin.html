@@ -63,6 +63,7 @@
       <div class="kpi"><div class="label">Entregas a tiempo</div><div class="val" id="k-ontime">—</div></div>
       <div class="kpi"><div class="label">Retrasos</div><div class="val warn" id="k-delay">—</div></div>
       <div class="kpi"><div class="label">En taller ahora</div><div class="val" id="k-now">—</div></div>
+      <div class="kpi"><div class="label">Reingresos</div><div class="val warn" id="k-reingresos">—</div></div>
     </div>
 
     <h2>Por técnico</h2>
@@ -75,10 +76,11 @@
           <th class="num">Retrasos</th>
           <th>Cumplimiento</th>
           <th class="num">En taller ahora</th>
+          <th class="num">Reingresos</th>
         </tr>
       </thead>
       <tbody id="rows">
-        <tr><td colspan="6" class="loading">Cargando…</td></tr>
+        <tr><td colspan="7" class="loading">Cargando…</td></tr>
       </tbody>
     </table>
     <div class="foot-note">Una moto está "en taller ahora" si tiene ingreso pero aún no tiene salida registrada.</div>
@@ -102,7 +104,7 @@ async function cargar(){
 
     // agrega por tecnico
     const stats = {};
-    TECNICOS.forEach(t => stats[t] = { atendidas:0, ontime:0, retrasos:0, ahora:0 });
+    TECNICOS.forEach(t => stats[t] = { atendidas:0, ontime:0, retrasos:0, ahora:0, reingresos:0 });
 
     // salidas = motos atendidas (usa el lookup Tecnico (de ingreso))
     salidas.forEach(r => {
@@ -115,21 +117,24 @@ async function cargar(){
       else if(f["Entrega"] === "A tiempo") stats[t].ontime++;
     });
 
-    // en taller ahora = ingresos sin salida vinculada
+    // en taller ahora = ingresos sin salida vinculada; reingresos = flag Reingreso en INGRESO
     ingresos.forEach(r => {
       const f = r.fields || {};
       const tieneSalida = Array.isArray(f["SALIDA"]) && f["SALIDA"].length > 0;
       const t = f["Técnico asignado"];
-      if(!tieneSalida && stats[t]) stats[t].ahora++;
+      if(!stats[t]) return;
+      if(!tieneSalida) stats[t].ahora++;
+      if(f["Re-ingreso"] === true) stats[t].reingresos++;
     });
 
     // totales
-    let T={atendidas:0,ontime:0,retrasos:0,ahora:0};
-    TECNICOS.forEach(t=>{ const s=stats[t]; T.atendidas+=s.atendidas; T.ontime+=s.ontime; T.retrasos+=s.retrasos; T.ahora+=s.ahora; });
+    let T={atendidas:0,ontime:0,retrasos:0,ahora:0,reingresos:0};
+    TECNICOS.forEach(t=>{ const s=stats[t]; T.atendidas+=s.atendidas; T.ontime+=s.ontime; T.retrasos+=s.retrasos; T.ahora+=s.ahora; T.reingresos+=s.reingresos; });
     document.getElementById("k-total").textContent  = T.atendidas;
     document.getElementById("k-ontime").textContent = T.ontime;
     document.getElementById("k-delay").textContent  = T.retrasos;
     document.getElementById("k-now").textContent    = T.ahora;
+    document.getElementById("k-reingresos").textContent = T.reingresos;
 
     // filas ordenadas por atendidas desc
     const filas = TECNICOS.map(t => ({nombre:t, ...stats[t]}))
@@ -140,6 +145,7 @@ async function cargar(){
       const pct = cerradas ? Math.round(s.ontime/cerradas*100) : 0;
       const pctTxt = cerradas ? pct + "%" : "—";
       const delayClass = s.retrasos === 0 ? "ok" : (s.retrasos <= 1 ? "warn" : "bad");
+      const reingresoClass = s.reingresos === 0 ? "ok" : "bad";
       return '<tr>' +
         '<td class="nombre">' + s.nombre + '</td>' +
         '<td class="num">' + s.atendidas + '</td>' +
@@ -147,12 +153,13 @@ async function cargar(){
         '<td class="num"><span class="pill ' + delayClass + '">' + s.retrasos + '</span></td>' +
         '<td>' + pctTxt + '<div class="pct-bar"><i style="width:' + pct + '%"></i></div></td>' +
         '<td class="num">' + (s.ahora || '—') + '</td>' +
+        '<td class="num"><span class="pill ' + reingresoClass + '">' + s.reingresos + '</span></td>' +
       '</tr>';
     }).join("");
 
   }catch(e){
     document.getElementById("rows").innerHTML =
-      '<tr><td colspan="6" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
+      '<tr><td colspan="7" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
   }
 }
 cargar();

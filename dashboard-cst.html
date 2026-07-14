@@ -389,6 +389,11 @@ guard(["manager","developer"]);
       <div class="kpi-sub">Del período seleccionado</div>
     </div>
     <div class="kpi-card">
+      <div class="kpi-label">Tasa de reingreso</div>
+      <div class="kpi-value red" id="kpi-reingreso">—</div>
+      <div class="kpi-sub" id="kpi-reingreso-sub">Del período seleccionado</div>
+    </div>
+    <div class="kpi-card">
       <div class="kpi-label">Valor facturado</div>
       <div class="kpi-value" id="kpi-facturado">—</div>
       <div class="kpi-sub">Suma Valor final (salidas)</div>
@@ -578,6 +583,8 @@ guard(["manager","developer"]);
         upsells_cerrados: Math.round(data.kpis.upsellCerrado * salidaRecords.length),
         valor_facturado_total: data.kpis.valorFacturado,
         ticket_promedio: data.kpis.ticketPromedio,
+        reingresos_total: data.kpis.reingresosCount,
+        tasa_reingreso: Math.round(data.kpis.tasaReingreso * 100) + '%',
         facturacion_por_tecnico: facturacionPorTecnico,
         retrasos_por_tecnico: retrasosPorTecnico,
         servicios_frecuentes: data.servicios.labels.map((l, i) => ({ servicio: l, cantidad: data.servicios.values[i] })),
@@ -616,6 +623,8 @@ guard(["manager","developer"]);
     const upsellCerrado  = salida.length ? salida.filter(r => r['Upsell cerrado'] === true).length / salida.length : 0;
     const valorFacturado = salida.reduce((s, r) => s + (r['Valor final'] || 0), 0);
     const ticketPromedio = salidaConValor.length ? valorFacturado / salidaConValor.length : 0;
+    const reingresosCount = ingreso.filter(r => r['Re-ingreso'] === true).length;
+    const tasaReingreso   = ingreso.length ? reingresosCount / ingreso.length : 0;
 
     // Chart servicios — Tipo servicio es array en INGRESO
     const servicioCount = {};
@@ -668,7 +677,7 @@ guard(["manager","developer"]);
     }));
 
     return {
-      kpis: { enTaller: enTaller.length, pendientes24h: pendientes24h.length, entregaTiempo, upsellCerrado, valorFacturado, ticketPromedio },
+      kpis: { enTaller: enTaller.length, pendientes24h: pendientes24h.length, entregaTiempo, upsellCerrado, valorFacturado, ticketPromedio, reingresosCount, tasaReingreso, totalIngresos: ingreso.length },
       servicios:  { labels: serviciosSorted.map(([k]) => k), values: serviciosSorted.map(([, v]) => v) },
       tecnicos:   { labels: tecnicosSorted.map(([k]) => k),  values: tecnicosSorted.map(([, v]) => v) },
       origen:     { labels: origenSorted.map(([k]) => k),    values: origenSorted.map(([, v]) => v) },
@@ -700,6 +709,8 @@ guard(["manager","developer"]);
     document.getElementById('kpi-upsell').textContent       = pct(k.upsellCerrado);
     document.getElementById('kpi-facturado').textContent    = fmt(k.valorFacturado);
     document.getElementById('kpi-ticket').textContent       = fmt(k.ticketPromedio);
+    document.getElementById('kpi-reingreso').textContent    = pct(k.tasaReingreso);
+    document.getElementById('kpi-reingreso-sub').textContent = k.reingresosCount + ' de ' + k.totalIngresos + ' ingresos';
   }
 
   // ── CHARTS ─────────────────────────────────────────────────────────────

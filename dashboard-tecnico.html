@@ -9,7 +9,7 @@
   :root{
     --bg:#1A1A1A; --panel:#242424; --panel-2:#2E2E2E; --line:#3A3A3A;
     --ink:#F0F0F0; --muted:#888; --accent:#C8102E; --accent-ink:#C9A84C;
-    --ok:#2ECC71; --warn:#C9A84C; --radius:10px;
+    --ok:#2ECC71; --warn:#C9A84C; --bad:#FF4D4D; --radius:10px;
     --sans:'Inter','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -35,6 +35,8 @@
   td.placa{font-family:var(--mono);font-weight:600;}
   td.val{font-family:var(--mono);text-align:right;}
   .badge{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);}
+  .badge.ok{background:rgba(46,204,113,.14);color:var(--ok);border-color:transparent;}
+  .badge.bad{background:rgba(255,77,77,.14);color:var(--bad);border-color:transparent;}
   .loading,.empty{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
@@ -56,15 +58,16 @@
       <div class="kpi"><div class="label">Motos asignadas</div><div class="val" id="k-motos">—</div></div>
       <div class="kpi"><div class="label">Valor estimado total</div><div class="val mono" id="k-valor">—</div></div>
       <div class="kpi"><div class="label">Ticket promedio</div><div class="val mono" id="k-ticket">—</div></div>
+      <div class="kpi"><div class="label">Reingresos</div><div class="val" id="k-reingresos">—</div></div>
     </div>
 
     <h2>Mis motos</h2>
     <table>
       <thead>
-        <tr><th>Placa</th><th>Servicio</th><th>Complejidad</th><th style="text-align:right">Valor est.</th></tr>
+        <tr><th>Placa</th><th>Servicio</th><th>Complejidad</th><th style="text-align:right">Valor est.</th><th>Reingreso</th></tr>
       </thead>
       <tbody id="rows">
-        <tr><td colspan="4" class="loading">Cargando…</td></tr>
+        <tr><td colspan="5" class="loading">Cargando…</td></tr>
       </tbody>
     </table>
   </div>
@@ -92,8 +95,9 @@ async function cargar(){
       document.getElementById("k-motos").textContent = "0";
       document.getElementById("k-valor").textContent = cop(0);
       document.getElementById("k-ticket").textContent = cop(0);
+      document.getElementById("k-reingresos").textContent = "0";
       document.getElementById("rows").innerHTML =
-        '<tr><td colspan="4" class="empty">Aun no tienes motos asignadas.</td></tr>';
+        '<tr><td colspan="5" class="empty">Aun no tienes motos asignadas.</td></tr>';
       return;
     }
 
@@ -104,14 +108,17 @@ async function cargar(){
         placa: f["Placa"] || "—",
         servicio: serv,
         complejidad: f["Complejidad"] || "—",
-        valor: Number(f["Valor estimado"] || 0)
+        valor: Number(f["Valor estimado"] || 0),
+        reingreso: f["Re-ingreso"] === true
       };
     });
 
     const total = motos.reduce((s,m)=> s + m.valor, 0);
+    const reingresos = motos.filter(m => m.reingreso).length;
     document.getElementById("k-motos").textContent  = motos.length;
     document.getElementById("k-valor").textContent  = cop(total);
     document.getElementById("k-ticket").textContent = cop(Math.round(total/motos.length));
+    document.getElementById("k-reingresos").textContent = reingresos;
 
     document.getElementById("rows").innerHTML = motos.slice(0,20).map(m =>
       '<tr>' +
@@ -119,11 +126,12 @@ async function cargar(){
         '<td>' + m.servicio + '</td>' +
         '<td><span class="badge">' + m.complejidad + '</span></td>' +
         '<td class="val">' + cop(m.valor) + '</td>' +
+        '<td><span class="badge ' + (m.reingreso ? 'bad">Sí' : 'ok">No') + '</span></td>' +
       '</tr>').join("");
 
   }catch(e){
     document.getElementById("rows").innerHTML =
-      '<tr><td colspan="4" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
+      '<tr><td colspan="5" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
   }
 }
 cargar();
