@@ -428,13 +428,24 @@ guard(["vendedor","admin","manager","developer"]);
 <script>
   const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
 
-  // "Quién registra" se deriva del rol del usuario logueado, no se elige a mano.
-  // admin -> Sergio, vendedor -> Alejandro. (Andres queda fuera por ahora.)
+  // "Quién registra" se deriva del usuario logueado, no se elige a mano.
+  // Max y Luis son manager, así que hay que distinguir por username (no por rol).
+  const REGISTRA_POR_USUARIO = {
+    admin: 'Sergio',
+    vendedor: 'Alejandro',
+    max: 'Max',
+    luis: 'Luis',
+    manager: 'manager',
+    developer: 'developer',
+  };
+  // Fallback por rol para sesiones sin usuario (p.ej. "Ver como" del developer).
   const REGISTRA_POR_ROL = { admin: 'Sergio', vendedor: 'Alejandro' };
   function setQuienRegistra() {
     const s = (typeof getSession === 'function' ? getSession() : null) || {};
+    const usuario = (s.usuario || '').toLowerCase();
     const rol = s.rol || s.role || '';
-    document.getElementById('quienRegistra').value = REGISTRA_POR_ROL[rol] || '';
+    const nombre = REGISTRA_POR_USUARIO[usuario] || REGISTRA_POR_ROL[rol] || s.tecnico || '';
+    document.getElementById('quienRegistra').value = nombre;
   }
   setQuienRegistra();
 

@@ -276,7 +276,7 @@ async function entrarConClave(usuario, password){
   const data = await res.json();
   if(!res.ok || data.error) throw new Error(data.error || "Usuario o clave incorrectos.");
 
-  const session = { token: data.token, rol: data.rol, tecnico: data.tecnico };
+  const session = { token: data.token, rol: data.rol, tecnico: data.tecnico, usuario: usuario };
   sessionStorage.setItem("cst_session", JSON.stringify(session));
 
   if(data.debe_cambiar){
