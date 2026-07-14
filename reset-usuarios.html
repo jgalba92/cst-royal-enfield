@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="auth.js?v=3"></script>
+<title>CST · Resetear contraseñas</title>
+<style>
+  :root{
+    --bg:#1A1A1A; --panel:#242424; --panel-2:#2E2E2E; --line:#3A3A3A;
+    --ink:#F0F0F0; --muted:#888; --accent:#C8102E; --accent-ink:#C9A84C;
+    --ok:#2ECC71; --warn:#C9A84C; --bad:#FF4D4D; --radius:10px;
+    --sans:'Inter','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;}
+  .wrap{max-width:900px;margin:0 auto;padding:22px 18px 60px;}
+  .top{display:flex;justify-content:space-between;align-items:center;
+    padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+  .top .who{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;}
+  .top h1{font-size:22px;font-weight:650;margin-top:4px;}
+  .logout{background:none;border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+  .logout:hover{border-color:var(--accent);color:var(--ink);}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 12px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  th,td{padding:12px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--line);}
+  th{background:var(--panel-2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+  tr:last-child td{border-bottom:none;}
+  td.nombre{font-weight:600;}
+  .pill{display:inline-block;font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:99px;text-align:center;}
+  .pill.ok{background:rgba(62,201,138,.12);color:var(--ok);}
+  .pill.warn{background:rgba(201,168,76,.14);color:var(--warn);}
+  .pill.bad{background:rgba(255,77,77,.14);color:var(--bad);}
+  .act-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    padding:7px 12px;border-radius:8px;font-size:12px;font-family:var(--sans);font-weight:600;cursor:pointer;}
+  .act-btn:hover{border-color:var(--accent-ink);}
+  .act-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .loading,.empty{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
+  .foot-note{margin-top:14px;font-size:12px;color:var(--muted);}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--ok);color:#1A1A1A;font-size:14px;font-weight:600;padding:12px 24px;
+    border-radius:999px;transition:transform .3s ease;z-index:999;white-space:nowrap;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.error{background:var(--bad);color:#fff;}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="index.html" style="display:inline-flex;align-items:center;gap:4px;color:#C9A84C;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:12px">← Menú</a>
+    <div class="top">
+      <div>
+        <div class="who">Solo developer</div>
+        <h1>Resetear contraseñas</h1>
+      </div>
+      <button class="logout" id="logout">Salir</button>
+    </div>
+
+    <h2>Usuarios</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Técnico</th>
+          <th>Activo</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="6" class="loading">Cargando…</td></tr>
+      </tbody>
+    </table>
+    <div class="foot-note">Al solicitar un reset, el usuario puede entrar con solo su usuario y definir una clave nueva directamente en el login — no hace falta comunicarle ninguna clave temporal. La solicitud vence sola en 48h si no la usa.</div>
+  </div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
+
+guard(["developer"]);
+const logoutBtn = document.getElementById("logout");
+if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
+
+function showToast(msg, isError){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast" + (isError ? " error" : "");
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+function fila(u){
+  const activoTxt = u.activo
+    ? '<span class="pill ok">Sí</span>'
+    : '<span class="pill bad">No</span>';
+  const estadoTxt = u.resetPendiente
+    ? '<span class="pill warn">Reset pendiente</span>'
+    : '<span class="pill ok">Normal</span>';
+  const accionHtml = u.resetPendiente
+    ? '<button class="act-btn" disabled>Ya solicitado</button>'
+    : '<button class="act-btn" data-usuario="' + u.usuario + '">Solicitar reset</button>';
+
+  return '<tr>' +
+    '<td class="nombre">' + u.usuario + '</td>' +
+    '<td>' + (u.rol || '—') + '</td>' +
+    '<td>' + (u.tecnico_nombre || '—') + '</td>' +
+    '<td>' + activoTxt + '</td>' +
+    '<td>' + estadoTxt + '</td>' +
+    '<td>' + accionHtml + '</td>' +
+  '</tr>';
+}
+
+function render(usuarios){
+  const rows = document.getElementById("rows");
+  if(usuarios.length === 0){
+    rows.innerHTML = '<tr><td colspan="6" class="empty">No hay usuarios.</td></tr>';
+    return;
+  }
+  rows.innerHTML = usuarios.map(fila).join("");
+
+  rows.querySelectorAll(".act-btn[data-usuario]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const usuario = btn.getAttribute("data-usuario");
+      btn.disabled = true;
+      btn.textContent = "Solicitando…";
+      try{
+        const res = await authFetch(API + "/solicitar-reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario })
+        });
+        const data = await res.json();
+        if(!res.ok || data.error){
+          showToast(data.error || "No se pudo solicitar el reset.", true);
+          btn.disabled = false;
+          btn.textContent = "Solicitar reset";
+          return;
+        }
+        showToast("Reset habilitado para " + usuario + ". Dile que entre solo con su usuario.");
+        cargar();
+      }catch(e){
+        showToast("Error de conexión.", true);
+        btn.disabled = false;
+        btn.textContent = "Solicitar reset";
+      }
+    });
+  });
+}
+
+async function cargar(){
+  try{
+    const res = await authFetch(API + "/usuarios");
+    const data = await res.json();
+    if(!res.ok || data.error){
+      document.getElementById("rows").innerHTML =
+        '<tr><td colspan="6" class="empty">' + (data.error || "No se pudo cargar.") + '</td></tr>';
+      return;
+    }
+    render(data.usuarios || []);
+  }catch(e){
+    document.getElementById("rows").innerHTML =
+      '<tr><td colspan="6" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
+  }
+}
+cargar();
+</script>
+</body>
+</html>
