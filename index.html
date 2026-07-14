@@ -87,7 +87,28 @@ guard(["vendedor","admin","manager","developer"]);
     gap: 12px;
     transition: border-color 0.15s, transform 0.1s;
     cursor: pointer;
+    position: relative;
   }
+
+  .badge-notif {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 0 0 2px var(--card);
+  }
+  .badge-notif.show { display: flex; }
 
   .nav-card:hover { border-color: var(--gold); }
   .nav-card:active { transform: scale(0.98); }
@@ -302,6 +323,7 @@ guard(["vendedor","admin","manager","developer"]);
     </a>
 
     <a class="nav-card" href="correcciones.html" data-roles="manager,developer">
+      <span class="badge-notif" id="corrBadge">0</span>
       <div class="nav-icon dark">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       </div>
@@ -344,6 +366,26 @@ guard(["vendedor","admin","manager","developer"]);
       if(!valor) return;
       verComo(valor);
     });
+  }
+
+  /* Badge rojo en "Correcciones" con la cantidad de solicitudes pendientes */
+  if(role === "manager" || role === "developer"){
+    cargarPendientesCorreccion();
+  }
+
+  async function cargarPendientesCorreccion(){
+    try{
+      var res = await authFetch(API + "/correcciones");
+      var data = await res.json();
+      if(!res.ok || data.error) return;
+      var pendientes = (data.solicitudes || []).filter(function(s){ return s.estado === "Pendiente"; }).length;
+      var badge = document.getElementById("corrBadge");
+      if(!badge) return;
+      if(pendientes > 0){
+        badge.textContent = pendientes > 99 ? "99+" : String(pendientes);
+        badge.classList.add("show");
+      }
+    }catch(e){ /* si falla, simplemente no se muestra el badge */ }
   }
 
   async function verComo(valor){
