@@ -78,6 +78,17 @@
   }
   .err.show{ display:block; }
 
+  .pass-field{ position:relative; }
+  .pass-field input{ padding-right:66px; }
+  .pass-toggle{
+    position:absolute; right:5px; top:50%; transform:translateY(-50%);
+    width:auto; margin-top:0; padding:5px 10px;
+    background:transparent; border:none; border-radius:6px;
+    color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+    cursor:pointer;
+  }
+  .pass-toggle:hover{ background:var(--panel-2); color:var(--ink); }
+
   .foot{
     padding:14px 28px; border-top:1px solid var(--line);
     font-size:11px; color:var(--muted); font-family:var(--mono);
@@ -106,7 +117,10 @@
       <div id="passWrap" style="display:none">
         <p style="color:var(--muted);font-size:13px;margin-bottom:4px" id="passUsuarioLabel"></p>
         <label for="pass">Clave</label>
-        <input id="pass" type="password" autocomplete="current-password" placeholder="••••••••">
+        <div class="pass-field">
+          <input id="pass" type="password" autocomplete="current-password" placeholder="••••••••">
+          <button type="button" class="pass-toggle" data-target="pass">Ver</button>
+        </div>
 
         <button id="btn">Entrar</button>
         <button type="button" id="btnVolverPass" style="background:none;border:1px solid var(--line);color:var(--muted);margin-top:8px">← Cambiar usuario</button>
@@ -118,10 +132,16 @@
           Tienes una solicitud de reinicio de clave activa. Define tu clave nueva para entrar.
         </p>
         <label for="claveResetNueva">Nueva clave (mínimo 8 caracteres)</label>
-        <input id="claveResetNueva" type="password" autocomplete="new-password" placeholder="••••••••">
+        <div class="pass-field">
+          <input id="claveResetNueva" type="password" autocomplete="new-password" placeholder="••••••••">
+          <button type="button" class="pass-toggle" data-target="claveResetNueva">Ver</button>
+        </div>
 
         <label for="claveResetConfirm">Confirmar nueva clave</label>
-        <input id="claveResetConfirm" type="password" autocomplete="new-password" placeholder="••••••••">
+        <div class="pass-field">
+          <input id="claveResetConfirm" type="password" autocomplete="new-password" placeholder="••••••••">
+          <button type="button" class="pass-toggle" data-target="claveResetConfirm">Ver</button>
+        </div>
 
         <button id="btnGuardarReset">Guardar y entrar</button>
         <button type="button" id="btnVolverReset" style="background:none;border:1px solid var(--line);color:var(--muted);margin-top:8px">← Cambiar usuario</button>
@@ -133,13 +153,22 @@
           Debes cambiar tu clave antes de continuar.
         </p>
         <label for="claveActual">Clave actual</label>
-        <input id="claveActual" type="password" autocomplete="current-password" placeholder="••••••••">
+        <div class="pass-field">
+          <input id="claveActual" type="password" autocomplete="current-password" placeholder="••••••••">
+          <button type="button" class="pass-toggle" data-target="claveActual">Ver</button>
+        </div>
 
         <label for="claveNueva">Nueva clave (mínimo 8 caracteres)</label>
-        <input id="claveNueva" type="password" autocomplete="new-password" placeholder="••••••••">
+        <div class="pass-field">
+          <input id="claveNueva" type="password" autocomplete="new-password" placeholder="••••••••">
+          <button type="button" class="pass-toggle" data-target="claveNueva">Ver</button>
+        </div>
 
         <label for="claveConfirm">Confirmar nueva clave</label>
-        <input id="claveConfirm" type="password" autocomplete="new-password" placeholder="••••••••">
+        <div class="pass-field">
+          <input id="claveConfirm" type="password" autocomplete="new-password" placeholder="••••••••">
+          <button type="button" class="pass-toggle" data-target="claveConfirm">Ver</button>
+        </div>
 
         <button id="btnCambiar">Cambiar clave y entrar</button>
         <div class="err" id="errCambio"></div>
@@ -361,6 +390,16 @@ btnVolverReset.addEventListener("click", volverAUsuario);
 
 btnCambiar.addEventListener("click", cambiarClave);
 claveConfirm.addEventListener("keydown", e => { if(e.key === "Enter") cambiarClave(); });
+
+/* Ver/ocultar clave: un botón por campo, alterna type="password" <-> "text" */
+document.querySelectorAll(".pass-toggle").forEach(toggleBtn => {
+  toggleBtn.addEventListener("click", () => {
+    const input = document.getElementById(toggleBtn.getAttribute("data-target"));
+    const mostrar = input.type === "password";
+    input.type = mostrar ? "text" : "password";
+    toggleBtn.textContent = mostrar ? "Ocultar" : "Ver";
+  });
+});
 </script>
 </body>
 </html>
