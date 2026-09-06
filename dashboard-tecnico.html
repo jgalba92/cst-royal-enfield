@@ -10,78 +10,132 @@
   :root{
     --bg:#1A1A1A; --panel:#242424; --panel-2:#2E2E2E; --line:#3A3A3A;
     --ink:#F0F0F0; --muted:#888; --accent:#C8102E; --accent-ink:#C9A84C;
-    --ok:#2ECC71; --warn:#C9A84C; --bad:#FF4D4D; --radius:10px;
+    --ok:#2ECC71; --bad:#FF4D4D; --radius:10px;
+    --c-pend:#3B82F6; --c-trab:#A855F7; --c-listo:#2ECC71;
     --sans:'Inter','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;}
-  .wrap{max-width:1000px;margin:0 auto;padding:22px 18px 60px;}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 14px 60px;}
+
   .top{display:flex;justify-content:space-between;align-items:center;
-    padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+    padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:18px;gap:10px;}
   .top .who{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;}
-  .top h1{font-size:22px;font-weight:650;margin-top:4px;}
+  .top h1{font-size:20px;font-weight:650;margin-top:4px;}
   .logout{background:none;border:1px solid var(--line);color:var(--muted);
-    padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+    padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
   .logout:hover{border-color:var(--accent);color:var(--ink);}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
-  .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;}
-  .kpi .val{font-size:26px;font-weight:700;margin-top:8px;letter-spacing:-.02em;}
-  .kpi .val.mono{font-family:var(--mono);font-size:22px;}
-  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 12px;font-weight:600;}
-  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
-  th,td{padding:11px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--line);}
-  th{background:var(--panel-2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
-  tr:last-child td{border-bottom:none;}
-  td.placa{font-family:var(--mono);font-weight:600;}
-  td.val{font-family:var(--mono);text-align:right;}
-  .badge{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);}
-  .badge.ok{background:rgba(46,204,113,.14);color:var(--ok);border-color:transparent;}
-  .badge.bad{background:rgba(255,77,77,.14);color:var(--bad);border-color:transparent;}
-  .loading,.empty{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+    border-radius:var(--radius);padding:12px 10px;text-align:center;}
+  .card.pend{border-left-color:var(--c-pend);}
+  .card.trab{border-left-color:var(--c-trab);}
+  .card.listo{border-left-color:var(--c-listo);}
+  .card .n{font-size:26px;font-weight:750;letter-spacing:-.02em;line-height:1;}
+  .card.pend .n{color:var(--c-pend);}
+  .card.trab .n{color:var(--c-trab);}
+  .card.listo .n{color:var(--c-listo);}
+  .card .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    font-weight:600;margin-top:5px;}
+
+  .ministats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+  .mstat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;}
+  .mstat .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;}
+  .mstat .v{font-size:18px;font-weight:700;margin-top:6px;font-family:var(--mono);}
+  .mstat .v small{font-size:12px;color:var(--muted);font-family:var(--sans);font-weight:600;}
+
+  .alerta{display:none;margin:0 0 16px;padding:11px 14px;background:rgba(200,16,46,.14);
+    border:1px solid var(--accent);border-radius:var(--radius);color:#ff8b98;font-size:13px;font-weight:600;}
+  .refresh-note{font-size:11px;color:var(--muted);margin:-8px 0 18px;}
+
+  section.grupo{margin-bottom:20px;}
+  .grupo-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .grupo-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .grupo-dot.pend{background:var(--c-pend);}
+  .grupo-dot.trab{background:var(--c-trab);}
+  .grupo-dot.listo{background:var(--c-listo);}
+  .grupo-head h2{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink);font-weight:700;}
+  .grupo-head .cnt{font-size:12px;color:var(--muted);font-family:var(--mono);}
+  .grupo-nota{font-size:12px;color:var(--accent-ink);margin:-4px 0 10px;font-weight:600;}
+
+  .moto-list{display:flex;flex-direction:column;gap:7px;}
+  .moto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:11px 13px;}
+  .moto-row.oldest{border-color:var(--accent-ink);background:rgba(201,168,76,.08);}
+  .moto-main{min-width:0;flex:1;}
+  .moto-placa-row{display:flex;align-items:center;gap:6px;}
+  .moto-placa{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.02em;}
+  .moto-star{font-size:11px;color:var(--accent-ink);}
+  .moto-serv{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;}
+  .moto-dias{text-align:right;flex-shrink:0;}
+  .moto-dias .num{font-family:var(--mono);font-size:17px;font-weight:700;}
+  .moto-dias .lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+
+  .empty,.loading{padding:16px;text-align:center;color:var(--muted);font-size:13px;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
-      <div style="display:flex;align-items:center;gap:12px">
-        <img src="assets/re-blanco.png" alt="Royal Enfield" style="height:36px;width:auto">
-        <div>
-          <div class="who" id="who">Técnico</div>
-          <h1 id="titulo">Mi taller</h1>
-        </div>
+      <div>
+        <div class="who" id="who">Técnico</div>
+        <h1 id="titulo">Mi taller</h1>
       </div>
       <button class="logout" id="logout">Salir</button>
     </div>
 
-    <h2>Estado del taller</h2>
-    <div class="kpis" id="te-kpis" style="margin-bottom:8px">
-      <div class="kpi"><div class="label">Activas</div><div class="val" id="te-activas">—</div></div>
-      <div class="kpi"><div class="label">Terminadas</div><div class="val" id="te-terminadas">—</div></div>
-      <div class="kpi"><div class="label">En taller</div><div class="val" id="te-entaller">—</div></div>
+    <div class="cards">
+      <div class="card pend"><div class="n" id="cnt-pendiente">—</div><div class="lbl">Por empezar</div></div>
+      <div class="card trab"><div class="n" id="cnt-trabajo">—</div><div class="lbl">En trabajo</div></div>
+      <div class="card listo"><div class="n" id="cnt-listas">—</div><div class="lbl">Listas</div></div>
     </div>
-    <div id="te-alerta" style="display:none;margin:0 0 12px;padding:10px 14px;background:rgba(255,77,77,.12);border:1px solid var(--bad);border-radius:var(--radius);color:var(--bad);font-size:13px;font-weight:600;"></div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:22px">Actualiza cada hora.</div>
 
-    <div id="airtable-section">
-      <div class="kpis">
-        <div class="kpi"><div class="label">Motos asignadas</div><div class="val" id="k-motos">—</div></div>
-        <div class="kpi"><div class="label">Valor estimado total</div><div class="val mono" id="k-valor">—</div></div>
-        <div class="kpi"><div class="label">Ticket promedio</div><div class="val mono" id="k-ticket">—</div></div>
-        <div class="kpi"><div class="label">Reingresos</div><div class="val" id="k-reingresos">—</div></div>
+    <div class="ministats">
+      <div class="mstat">
+        <div class="lbl">Más vieja</div>
+        <div class="v" id="mv-valor">—</div>
       </div>
-
-      <h2>Mis motos</h2>
-      <table>
-        <thead>
-          <tr><th>Placa</th><th>Servicio</th><th>Complejidad</th><th style="text-align:right">Valor est.</th><th>Reingreso</th></tr>
-        </thead>
-        <tbody id="rows">
-          <tr><td colspan="5" class="loading">Cargando…</td></tr>
-        </tbody>
-      </table>
+      <div class="mstat">
+        <div class="lbl">Tu promedio</div>
+        <div class="v">—</div>
+      </div>
     </div>
+
+    <div class="alerta" id="te-alerta"></div>
+    <div class="refresh-note">Actualiza cada hora.</div>
+
+    <section class="grupo">
+      <div class="grupo-head">
+        <span class="grupo-dot pend"></span>
+        <h2>Por empezar</h2>
+        <span class="cnt" id="sec-pendiente-cnt"></span>
+      </div>
+      <div class="moto-list" id="sec-pendiente"><div class="loading">Cargando…</div></div>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-head">
+        <span class="grupo-dot trab"></span>
+        <h2>En trabajo</h2>
+        <span class="cnt" id="sec-trabajo-cnt"></span>
+      </div>
+      <div class="moto-list" id="sec-trabajo"><div class="loading">Cargando…</div></div>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-head">
+        <span class="grupo-dot listo"></span>
+        <h2>Listas para entregar</h2>
+        <span class="cnt" id="sec-listas-cnt"></span>
+      </div>
+      <div class="grupo-nota">Avisa al cliente.</div>
+      <div class="moto-list" id="sec-listas"><div class="loading">Cargando…</div></div>
+    </section>
   </div>
 
 <script>
@@ -90,86 +144,75 @@ const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 /* Guard de sesion: solo tecnico */
 const session = guard(["tecnico"]);
 const nombre = (session && session.tecnico) || "";
-document.getElementById("who").textContent = "Tecnico · " + nombre;
+document.getElementById("who").textContent = "Técnico · " + nombre;
 document.getElementById("titulo").textContent = "Hola, " + nombre;
 const logoutBtn = document.getElementById("logout");
 if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
 
-/* Seccion Airtable (datos viejos): oculta para tecnico, admin y manager.
-   Solo developer podria verla (no aplica en esta pagina, guard es solo tecnico). */
-(function aplicarVisibilidadFuente(){
-  const rol = session && session.rol;
-  const seccionAirtable = document.getElementById("airtable-section");
-  if(seccionAirtable && rol !== "developer"){
-    seccionAirtable.style.display = "none";
-  }
-})();
-
-const cop = n => "$" + Number(n||0).toLocaleString("es-CO");
-
-async function cargar(){
-  try{
-    const res = await authFetch(API + "/dashboard");
-    const data = await res.json();
-    const records = (data && data.ingreso && data.ingreso.records) || [];
-
-    if(records.length === 0){
-      document.getElementById("k-motos").textContent = "0";
-      document.getElementById("k-valor").textContent = cop(0);
-      document.getElementById("k-ticket").textContent = cop(0);
-      document.getElementById("k-reingresos").textContent = "0";
-      document.getElementById("rows").innerHTML =
-        '<tr><td colspan="5" class="empty">Aun no tienes motos asignadas.</td></tr>';
-      return;
-    }
-
-    const motos = records.map(r => {
-      const f = r.fields || {};
-      const serv = Array.isArray(f["Tipo servicio"]) ? f["Tipo servicio"].join(", ") : (f["Tipo servicio"] || "—");
-      return {
-        placa: f["Placa"] || "—",
-        servicio: serv,
-        complejidad: f["Complejidad"] || "—",
-        valor: Number(f["Valor estimado"] || 0),
-        reingreso: f["Re-ingreso"] === true
-      };
-    });
-
-    const total = motos.reduce((s,m)=> s + m.valor, 0);
-    const reingresos = motos.filter(m => m.reingreso).length;
-    document.getElementById("k-motos").textContent  = motos.length;
-    document.getElementById("k-valor").textContent  = cop(total);
-    document.getElementById("k-ticket").textContent = cop(Math.round(total/motos.length));
-    document.getElementById("k-reingresos").textContent = reingresos;
-
-    document.getElementById("rows").innerHTML = motos.slice(0,20).map(m =>
-      '<tr>' +
-        '<td class="placa">' + m.placa + '</td>' +
-        '<td>' + m.servicio + '</td>' +
-        '<td><span class="badge">' + m.complejidad + '</span></td>' +
-        '<td class="val">' + cop(m.valor) + '</td>' +
-        '<td><span class="badge ' + (m.reingreso ? 'bad">Sí' : 'ok">No') + '</span></td>' +
-      '</tr>').join("");
-
-  }catch(e){
-    document.getElementById("rows").innerHTML =
-      '<tr><td colspan="5" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
-  }
+function filaMoto(m, esLaMasVieja){
+  const dias = (m.dias_en_taller === null || m.dias_en_taller === undefined) ? "—" : m.dias_en_taller;
+  return (
+    '<div class="moto-row' + (esLaMasVieja ? ' oldest' : '') + '">' +
+      '<div class="moto-main">' +
+        '<div class="moto-placa-row">' +
+          '<span class="moto-placa">' + (m.placa || "—") + '</span>' +
+          (esLaMasVieja ? '<span class="moto-star">★ más antigua</span>' : '') +
+        '</div>' +
+        '<div class="moto-serv">' + (m.servicio || "Sin descripción") + '</div>' +
+      '</div>' +
+      '<div class="moto-dias">' +
+        '<div class="num">' + dias + '</div>' +
+        '<div class="lbl">días</div>' +
+      '</div>' +
+    '</div>'
+  );
 }
-cargar();
+
+function renderGrupo(id, cntId, motos, masViejaConsecutivo){
+  document.getElementById(cntId).textContent = motos.length;
+  const cont = document.getElementById(id);
+  if(motos.length === 0){
+    cont.innerHTML = '<div class="empty">Sin motos en este estado.</div>';
+    return;
+  }
+  cont.innerHTML = motos
+    .slice()
+    .sort((a,b) => (b.dias_en_taller||0) - (a.dias_en_taller||0))
+    .map(m => filaMoto(m, m.consecutivo === masViejaConsecutivo))
+    .join("");
+}
 
 async function cargarTallerEstado(){
   try{
     const res = await authFetch(API + "/taller-estado");
     const data = await res.json();
-    const resumen = data.resumen || {};
-    const porTec = (data.por_tecnico && data.por_tecnico[0]) || null;
-    const activas = porTec ? porTec.activas : (resumen.pendientes||0) + (resumen.trabajando||0);
-    const terminadas = porTec ? porTec.terminadas : (resumen.terminadas||0);
+    const misOrdenes = data.mis_ordenes || [];
 
-    document.getElementById("te-activas").textContent = activas ?? "—";
-    document.getElementById("te-terminadas").textContent = terminadas ?? "—";
-    document.getElementById("te-entaller").textContent = resumen.en_taller ?? "—";
+    const porEstado = { "Pendiente": [], "En Atención": [], "Atendido": [] };
+    misOrdenes.forEach(m => {
+      if(porEstado[m.estado]) porEstado[m.estado].push(m);
+    });
+
+    document.getElementById("cnt-pendiente").textContent = porEstado["Pendiente"].length;
+    document.getElementById("cnt-trabajo").textContent   = porEstado["En Atención"].length;
+    document.getElementById("cnt-listas").textContent    = porEstado["Atendido"].length;
+
+    let masVieja = null;
+    misOrdenes.forEach(m => {
+      if(m.dias_en_taller === null || m.dias_en_taller === undefined) return;
+      if(!masVieja || m.dias_en_taller > masVieja.dias_en_taller) masVieja = m;
+    });
+    const mvEl = document.getElementById("mv-valor");
+    if(masVieja){
+      mvEl.innerHTML = masVieja.placa + ' <small>· ' + masVieja.dias_en_taller +
+        (masVieja.dias_en_taller === 1 ? ' día' : ' días') + '</small>';
+    }else{
+      mvEl.textContent = "—";
+    }
+
+    renderGrupo("sec-pendiente", "sec-pendiente-cnt", porEstado["Pendiente"], masVieja && masVieja.consecutivo);
+    renderGrupo("sec-trabajo",   "sec-trabajo-cnt",   porEstado["En Atención"], masVieja && masVieja.consecutivo);
+    renderGrupo("sec-listas",    "sec-listas-cnt",    porEstado["Atendido"], masVieja && masVieja.consecutivo);
 
     const inconsistencias = data.inconsistencias || [];
     const alerta = document.getElementById("te-alerta");
@@ -181,12 +224,16 @@ async function cargarTallerEstado(){
       alerta.style.display = "none";
     }
   }catch(e){
-    document.getElementById("te-activas").textContent = "—";
-    document.getElementById("te-terminadas").textContent = "—";
-    document.getElementById("te-entaller").textContent = "—";
+    document.getElementById("cnt-pendiente").textContent = "—";
+    document.getElementById("cnt-trabajo").textContent = "—";
+    document.getElementById("cnt-listas").textContent = "—";
+    document.getElementById("mv-valor").textContent = "—";
+    ["sec-pendiente","sec-trabajo","sec-listas"].forEach(id => {
+      document.getElementById(id).innerHTML = '<div class="empty">No se pudo cargar el estado del taller.</div>';
+    });
     const alerta = document.getElementById("te-alerta");
-    alerta.textContent = "No se pudo cargar el estado del taller.";
-    alerta.style.cssText = "display:block;margin:0 0 12px;padding:10px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--muted);font-size:13px;";
+    alerta.textContent = "No se pudo conectar con el servidor. Reintenta.";
+    alerta.style.cssText = "display:block;margin:0 0 16px;padding:11px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--muted);font-size:13px;";
   }
 }
 cargarTallerEstado();
