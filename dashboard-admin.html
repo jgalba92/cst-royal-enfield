@@ -66,6 +66,7 @@
     border-radius:7px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
   .btn-exportar:hover{background:var(--accent-ink);color:#1A1A1A;}
   .btn-exportar:disabled{opacity:.4;cursor:default;}
+  .contador-filtro{font-size:12px;color:var(--muted);margin-bottom:10px;}
 
   .tabla-wrap{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-width:0;}
   .tabla-scroll{max-height:520px;overflow-y:auto;overflow-x:hidden;}
@@ -142,8 +143,28 @@
         <label for="filtro-hasta">Ingreso hasta</label>
         <input type="date" id="filtro-hasta">
       </div>
+      <div class="filtro-campo">
+        <label for="filtro-estado">Estado</label>
+        <select id="filtro-estado">
+          <option value="">Todos</option>
+          <option value="Pendiente">Por empezar</option>
+          <option value="En Atención">En trabajo</option>
+          <option value="Atendido">Listas</option>
+        </select>
+      </div>
+      <div class="filtro-campo">
+        <label for="filtro-inconsistencia">Inconsistencia</label>
+        <select id="filtro-inconsistencia">
+          <option value="">Todas</option>
+          <option value="critica">Críticas</option>
+          <option value="revisar">Revisar</option>
+          <option value="limpia">Limpias</option>
+        </select>
+      </div>
       <button type="button" class="btn-exportar" id="btn-exportar">Exportar CSV</button>
     </div>
+
+    <div class="contador-filtro" id="contador-filtro"></div>
 
     <div class="tabla-wrap">
       <div class="tabla-scroll">
@@ -235,13 +256,25 @@ function parseFechaInput(valor){
   return isNaN(d.getTime()) ? null : d;
 }
 
+/* Misma clasificación que usa el Worker para "inconsistencias", pero
+   aplicada aquí a cualquier orden de todas_ordenes para el filtro. */
+function clasificarInconsistencia(o){
+  if(o.tecnico === "Tecnico De" || o.total > 20000000) return "critica";
+  if(o.total >= 15000000 && o.total <= 20000000) return "revisar";
+  return "limpia";
+}
+
 function filtrarYOrdenar(){
   const tecnicoSel = document.getElementById("filtro-tecnico").value;
+  const estadoSel = document.getElementById("filtro-estado").value;
+  const inconsistenciaSel = document.getElementById("filtro-inconsistencia").value;
   const desde = parseFechaInput(document.getElementById("filtro-desde").value);
   const hasta = parseFechaInput(document.getElementById("filtro-hasta").value);
 
   return todasOrdenes
     .filter(o => !tecnicoSel || o.tecnico === tecnicoSel)
+    .filter(o => !estadoSel || o.estado === estadoSel)
+    .filter(o => !inconsistenciaSel || clasificarInconsistencia(o) === inconsistenciaSel)
     .filter(o => {
       if(!desde && !hasta) return true;
       const fecha = fechaIngresoReal(o.fecha_ingreso);
@@ -269,8 +302,16 @@ function filaTabla(o){
   );
 }
 
+function actualizarContador(n){
+  const el = document.getElementById("contador-filtro");
+  if(!el) return;
+  const total = todasOrdenes.length;
+  el.textContent = n + " de " + total + (total === 1 ? " orden" : " órdenes");
+}
+
 function renderTabla(){
   const filas = filtrarYOrdenar();
+  actualizarContador(filas.length);
   const cuerpo = document.getElementById("tabla-body");
   const colspan = puedeVerPlata ? 6 : 5;
   if(filas.length === 0){
@@ -328,6 +369,8 @@ function exportarCSV(){
 }
 
 document.getElementById("filtro-tecnico").addEventListener("change", renderTabla);
+document.getElementById("filtro-estado").addEventListener("change", renderTabla);
+document.getElementById("filtro-inconsistencia").addEventListener("change", renderTabla);
 document.getElementById("filtro-desde").addEventListener("change", renderTabla);
 document.getElementById("filtro-hasta").addEventListener("change", renderTabla);
 document.getElementById("btn-exportar").addEventListener("click", exportarCSV);
@@ -354,6 +397,7 @@ async function cargarTallerEstado(){
     document.getElementById("kpi-terminadas").textContent = "—";
     document.getElementById("kpi-criticas").textContent = "—";
     document.getElementById("carga-tecnico").innerHTML = '<div class="empty">No se pudo cargar.</div>';
+    document.getElementById("contador-filtro").textContent = "";
     const colspan = puedeVerPlata ? 6 : 5;
     document.getElementById("tabla-body").innerHTML =
       '<tr><td colspan="' + colspan + '" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
