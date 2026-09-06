@@ -64,22 +64,24 @@
     <div id="te-alerta" style="display:none;margin:0 0 12px;padding:10px 14px;background:rgba(255,77,77,.12);border:1px solid var(--bad);border-radius:var(--radius);color:var(--bad);font-size:13px;font-weight:600;"></div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:22px">Actualiza cada hora.</div>
 
-    <div class="kpis">
-      <div class="kpi"><div class="label">Motos asignadas</div><div class="val" id="k-motos">—</div></div>
-      <div class="kpi"><div class="label">Valor estimado total</div><div class="val mono" id="k-valor">—</div></div>
-      <div class="kpi"><div class="label">Ticket promedio</div><div class="val mono" id="k-ticket">—</div></div>
-      <div class="kpi"><div class="label">Reingresos</div><div class="val" id="k-reingresos">—</div></div>
-    </div>
+    <div id="airtable-section">
+      <div class="kpis">
+        <div class="kpi"><div class="label">Motos asignadas</div><div class="val" id="k-motos">—</div></div>
+        <div class="kpi"><div class="label">Valor estimado total</div><div class="val mono" id="k-valor">—</div></div>
+        <div class="kpi"><div class="label">Ticket promedio</div><div class="val mono" id="k-ticket">—</div></div>
+        <div class="kpi"><div class="label">Reingresos</div><div class="val" id="k-reingresos">—</div></div>
+      </div>
 
-    <h2>Mis motos</h2>
-    <table>
-      <thead>
-        <tr><th>Placa</th><th>Servicio</th><th>Complejidad</th><th style="text-align:right">Valor est.</th><th>Reingreso</th></tr>
-      </thead>
-      <tbody id="rows">
-        <tr><td colspan="5" class="loading">Cargando…</td></tr>
-      </tbody>
-    </table>
+      <h2>Mis motos</h2>
+      <table>
+        <thead>
+          <tr><th>Placa</th><th>Servicio</th><th>Complejidad</th><th style="text-align:right">Valor est.</th><th>Reingreso</th></tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="5" class="loading">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 <script>
@@ -92,6 +94,16 @@ document.getElementById("who").textContent = "Tecnico · " + nombre;
 document.getElementById("titulo").textContent = "Hola, " + nombre;
 const logoutBtn = document.getElementById("logout");
 if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
+
+/* Seccion Airtable (datos viejos): oculta para tecnico, admin y manager.
+   Solo developer podria verla (no aplica en esta pagina, guard es solo tecnico). */
+(function aplicarVisibilidadFuente(){
+  const rol = session && session.rol;
+  const seccionAirtable = document.getElementById("airtable-section");
+  if(seccionAirtable && rol !== "developer"){
+    seccionAirtable.style.display = "none";
+  }
+})();
 
 const cop = n => "$" + Number(n||0).toLocaleString("es-CO");
 

@@ -7,7 +7,7 @@
 <script src="page-info.js?v=1"></script>
 <script>
 /* Guard de rol: solo manager */
-guard(["manager","developer"]);
+var cstSession = guard(["manager","developer"]);
 </script>
 <title>Dashboard — CST Royal Enfield</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -276,6 +276,28 @@ guard(["manager","developer"]);
   .badge-gold  { background: rgba(201,168,76,0.15); color: var(--gold); }
   .badge-muted { background: rgba(136,136,136,0.15); color: var(--text-muted); }
 
+  /* FUENTE TOGGLE (solo developer) */
+  .fuente-toggle {
+    display: inline-flex;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .fuente-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .fuente-btn.active { background: var(--red); color: white; }
+
   /* TOAST */
   .toast {
     position: fixed;
@@ -379,6 +401,15 @@ guard(["manager","developer"]);
     <div style="font-size:11px;color:var(--text-muted);margin-top:10px">Actualiza cada hora.</div>
   </div>
 
+  <!-- FUENTE TOGGLE (solo developer) -->
+  <div id="fuente-toggle" style="display:none;margin-bottom:20px">
+    <div class="fuente-toggle">
+      <button type="button" id="btn-fuente-mk" class="fuente-btn active" onclick="mostrarFuente('mk')">Motokontrol</button>
+      <button type="button" id="btn-fuente-at" class="fuente-btn" onclick="mostrarFuente('airtable')">Airtable</button>
+    </div>
+  </div>
+
+  <div id="airtable-section">
   <!-- FILTROS -->
   <div class="card filters-card">
     <div class="section-title">Filtros</div>
@@ -487,6 +518,8 @@ guard(["manager","developer"]);
       </table>
     </div>
   </div>
+  </div>
+  <!-- /airtable-section -->
 
 </div>
 
@@ -911,6 +944,35 @@ guard(["manager","developer"]);
     }
   }
 
+  // ── VISIBILIDAD SECCION AIRTABLE (por rol) ────────────────────────────
+  function mostrarFuente(cual) {
+    const seccionAirtable = document.getElementById('airtable-section');
+    const btnMk = document.getElementById('btn-fuente-mk');
+    const btnAt = document.getElementById('btn-fuente-at');
+    if (!seccionAirtable) return;
+    if (cual === 'airtable') {
+      seccionAirtable.style.display = 'block';
+      if (btnMk) btnMk.classList.remove('active');
+      if (btnAt) btnAt.classList.add('active');
+    } else {
+      seccionAirtable.style.display = 'none';
+      if (btnMk) btnMk.classList.add('active');
+      if (btnAt) btnAt.classList.remove('active');
+    }
+  }
+
+  function aplicarVisibilidadFuente() {
+    const rol = cstSession && cstSession.rol;
+    const toggle = document.getElementById('fuente-toggle');
+    if (rol === 'developer') {
+      if (toggle) toggle.style.display = 'block';
+      mostrarFuente('mk');
+    } else {
+      if (toggle) toggle.style.display = 'none';
+      mostrarFuente('mk'); // oculta la seccion Airtable para manager
+    }
+  }
+
   // ── TOAST ──────────────────────────────────────────────────────────────
   function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
@@ -924,6 +986,7 @@ guard(["manager","developer"]);
   Chart.defaults.color = '#888';
   Chart.defaults.font.family = 'Inter, sans-serif';
 
+  aplicarVisibilidadFuente();
   setDefaultDates();
   updateClock();
   setInterval(updateClock, 60000);

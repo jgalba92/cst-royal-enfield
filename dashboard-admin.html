@@ -43,6 +43,9 @@
   .pct-bar i{display:block;height:100%;background:var(--ok);}
   .loading,.empty{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
   .foot-note{margin-top:14px;font-size:12px;color:var(--muted);}
+  .fuente-toggle{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px;}
+  .fuente-btn{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 16px;border-radius:6px;cursor:pointer;}
+  .fuente-btn.active{background:var(--accent);color:#fff;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
@@ -77,44 +80,81 @@
     <div id="te-inconsistencias" style="margin-bottom:10px">
       <div class="loading">Cargando…</div>
     </div>
-    <div class="foot-note" id="te-nota" style="margin-bottom:26px">Actualiza cada hora.</div>
+    <div class="foot-note" id="te-nota" style="margin-bottom:20px">Actualiza cada hora.</div>
 
-    <div class="kpis">
-      <div class="kpi"><div class="label">Motos atendidas</div><div class="val" id="k-total">—</div></div>
-      <div class="kpi"><div class="label">Entregas a tiempo</div><div class="val" id="k-ontime">—</div></div>
-      <div class="kpi"><div class="label">Retrasos</div><div class="val warn" id="k-delay">—</div></div>
-      <div class="kpi"><div class="label">En taller ahora</div><div class="val" id="k-now">—</div></div>
-      <div class="kpi"><div class="label">Reingresos</div><div class="val warn" id="k-reingresos">—</div></div>
+    <div id="fuente-toggle" style="display:none;margin-bottom:22px">
+      <div class="fuente-toggle">
+        <button type="button" id="btn-fuente-mk" class="fuente-btn active" onclick="mostrarFuente('mk')">Motokontrol</button>
+        <button type="button" id="btn-fuente-at" class="fuente-btn" onclick="mostrarFuente('airtable')">Airtable</button>
+      </div>
     </div>
 
-    <h2>Por técnico</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Técnico</th>
-          <th class="num">Atendidas</th>
-          <th class="num">A tiempo</th>
-          <th class="num">Retrasos</th>
-          <th>Cumplimiento</th>
-          <th class="num">En taller ahora</th>
-          <th class="num">Reingresos</th>
-        </tr>
-      </thead>
-      <tbody id="rows">
-        <tr><td colspan="7" class="loading">Cargando…</td></tr>
-      </tbody>
-    </table>
-    <div class="foot-note">Una moto está "en taller ahora" si tiene ingreso pero aún no tiene salida registrada.</div>
+    <div id="airtable-section">
+      <div class="kpis">
+        <div class="kpi"><div class="label">Motos atendidas</div><div class="val" id="k-total">—</div></div>
+        <div class="kpi"><div class="label">Entregas a tiempo</div><div class="val" id="k-ontime">—</div></div>
+        <div class="kpi"><div class="label">Retrasos</div><div class="val warn" id="k-delay">—</div></div>
+        <div class="kpi"><div class="label">En taller ahora</div><div class="val" id="k-now">—</div></div>
+        <div class="kpi"><div class="label">Reingresos</div><div class="val warn" id="k-reingresos">—</div></div>
+      </div>
+
+      <h2>Por técnico</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Técnico</th>
+            <th class="num">Atendidas</th>
+            <th class="num">A tiempo</th>
+            <th class="num">Retrasos</th>
+            <th>Cumplimiento</th>
+            <th class="num">En taller ahora</th>
+            <th class="num">Reingresos</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="7" class="loading">Cargando…</td></tr>
+        </tbody>
+      </table>
+      <div class="foot-note">Una moto está "en taller ahora" si tiene ingreso pero aún no tiene salida registrada.</div>
+    </div>
   </div>
 
 <script>
 const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
-const TECNICOS = ["Nelson","Eduin","Harold","Camilo","Daniel","Edisson"];
+const TECNICOS = ["Nelson Jaime","Eduin Yesid","Harold","William Camilo","John Edinson"];
 
 /* Guard de sesion: solo admin y manager */
-guard(["admin","manager","developer"]);
+const session = guard(["admin","manager","developer"]);
 const logoutBtn = document.getElementById("logout");
 if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
+
+function mostrarFuente(cual){
+  const seccionAirtable = document.getElementById("airtable-section");
+  const btnMk = document.getElementById("btn-fuente-mk");
+  const btnAt = document.getElementById("btn-fuente-at");
+  if(!seccionAirtable) return;
+  if(cual === "airtable"){
+    seccionAirtable.style.display = "block";
+    if(btnMk) btnMk.classList.remove("active");
+    if(btnAt) btnAt.classList.add("active");
+  }else{
+    seccionAirtable.style.display = "none";
+    if(btnMk) btnMk.classList.add("active");
+    if(btnAt) btnAt.classList.remove("active");
+  }
+}
+
+(function aplicarVisibilidadFuente(){
+  const rol = session && session.rol;
+  const toggle = document.getElementById("fuente-toggle");
+  if(rol === "developer"){
+    if(toggle) toggle.style.display = "block";
+    mostrarFuente("mk");
+  }else{
+    if(toggle) toggle.style.display = "none";
+    mostrarFuente("mk");
+  }
+})();
 
 async function cargar(){
   try{
