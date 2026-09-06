@@ -60,6 +60,25 @@
       <button class="logout" id="logout">Salir</button>
     </div>
 
+    <h2>Estado del taller</h2>
+    <div class="kpis" style="margin-bottom:18px">
+      <div class="kpi"><div class="label">En taller</div><div class="val" id="te-enTaller">—</div></div>
+      <div class="kpi"><div class="label">Trabajando</div><div class="val warn" id="te-trabajando">—</div></div>
+      <div class="kpi"><div class="label">Terminadas</div><div class="val" id="te-terminadas">—</div></div>
+      <div class="kpi"><div class="label">Críticas</div><div class="val" style="color:var(--bad)" id="te-criticas">—</div></div>
+    </div>
+
+    <h2>Carga por técnico</h2>
+    <div id="te-cargaTecnico" style="margin-bottom:22px">
+      <div class="loading">Cargando…</div>
+    </div>
+
+    <h2>Inconsistencias</h2>
+    <div id="te-inconsistencias" style="margin-bottom:10px">
+      <div class="loading">Cargando…</div>
+    </div>
+    <div class="foot-note" id="te-nota" style="margin-bottom:26px">Actualiza cada hora.</div>
+
     <div class="kpis">
       <div class="kpi"><div class="label">Motos atendidas</div><div class="val" id="k-total">—</div></div>
       <div class="kpi"><div class="label">Entregas a tiempo</div><div class="val" id="k-ontime">—</div></div>
@@ -165,6 +184,75 @@ async function cargar(){
   }
 }
 cargar();
+
+function renderCargaTecnico(porTecnico){
+  const cont = document.getElementById("te-cargaTecnico");
+  if(!porTecnico || !porTecnico.length){
+    cont.innerHTML = '<div class="empty">Sin datos</div>';
+    return;
+  }
+  const maxTotal = Math.max(1, ...porTecnico.map(t => (t.activas||0) + (t.terminadas||0)));
+  cont.innerHTML = porTecnico.map(t => {
+    const pctActivas = Math.round(((t.activas||0) / maxTotal) * 100);
+    const pctTerminadas = Math.round(((t.terminadas||0) / maxTotal) * 100);
+    return '<div style="margin-bottom:12px">' +
+      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">' +
+        '<span style="font-weight:600">' + (t.tecnico || "—") + '</span>' +
+        '<span style="color:var(--muted);font-family:var(--mono)">' + (t.activas||0) + '·' + (t.terminadas||0) + '</span>' +
+      '</div>' +
+      '<div class="pct-bar" style="display:flex;overflow:hidden">' +
+        '<i style="width:' + pctActivas + '%;background:var(--warn)"></i>' +
+        '<i style="width:' + pctTerminadas + '%;background:var(--ok)"></i>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+function renderInconsistencias(lista){
+  const cont = document.getElementById("te-inconsistencias");
+  if(!lista || !lista.length){
+    cont.innerHTML = '<div class="empty">Sin inconsistencias</div>';
+    return;
+  }
+  cont.innerHTML = lista.map(i => {
+    const esCritica = i.severidad === "critica";
+    return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;' +
+      'padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px">' +
+      '<div>' +
+        '<div style="font-weight:600;font-family:var(--mono)">' + (i.placa || "—") + ' · ' + (i.tecnico || "—") + '</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + (i.nota || "") + '</div>' +
+      '</div>' +
+      '<span class="pill ' + (esCritica ? "bad" : "warn") + '">' + (esCritica ? "Crítica" : "Revisar") + '</span>' +
+    '</div>';
+  }).join("");
+}
+
+async function cargarTallerEstado(){
+  try{
+    const res = await authFetch(API + "/taller-estado");
+    const data = await res.json();
+    const r = data.resumen || {};
+
+    document.getElementById("te-enTaller").textContent = r.en_taller ?? "—";
+    document.getElementById("te-trabajando").textContent = r.trabajando ?? "—";
+    document.getElementById("te-terminadas").textContent = r.terminadas ?? "—";
+    document.getElementById("te-criticas").textContent = data.criticas ?? 0;
+
+    renderCargaTecnico(data.por_tecnico || []);
+    renderInconsistencias(data.inconsistencias || []);
+    document.getElementById("te-nota").textContent = "Actualiza cada hora.";
+  }catch(e){
+    document.getElementById("te-enTaller").textContent = "—";
+    document.getElementById("te-trabajando").textContent = "—";
+    document.getElementById("te-terminadas").textContent = "—";
+    document.getElementById("te-criticas").textContent = "—";
+    document.getElementById("te-cargaTecnico").innerHTML = '<div class="empty">No se pudo cargar</div>';
+    document.getElementById("te-inconsistencias").innerHTML = "";
+    document.getElementById("te-nota").textContent = "No se pudo cargar el estado del taller.";
+  }
+}
+cargarTallerEstado();
+setInterval(cargarTallerEstado, 3600000);
 </script>
 </body>
 </html>

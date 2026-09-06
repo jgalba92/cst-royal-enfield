@@ -55,6 +55,15 @@
       <button class="logout" id="logout">Salir</button>
     </div>
 
+    <h2>Estado del taller</h2>
+    <div class="kpis" id="te-kpis" style="margin-bottom:8px">
+      <div class="kpi"><div class="label">Activas</div><div class="val" id="te-activas">—</div></div>
+      <div class="kpi"><div class="label">Terminadas</div><div class="val" id="te-terminadas">—</div></div>
+      <div class="kpi"><div class="label">En taller</div><div class="val" id="te-entaller">—</div></div>
+    </div>
+    <div id="te-alerta" style="display:none;margin:0 0 12px;padding:10px 14px;background:rgba(255,77,77,.12);border:1px solid var(--bad);border-radius:var(--radius);color:var(--bad);font-size:13px;font-weight:600;"></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:22px">Actualiza cada hora.</div>
+
     <div class="kpis">
       <div class="kpi"><div class="label">Motos asignadas</div><div class="val" id="k-motos">—</div></div>
       <div class="kpi"><div class="label">Valor estimado total</div><div class="val mono" id="k-valor">—</div></div>
@@ -136,6 +145,40 @@ async function cargar(){
   }
 }
 cargar();
+
+async function cargarTallerEstado(){
+  try{
+    const res = await authFetch(API + "/taller-estado");
+    const data = await res.json();
+    const resumen = data.resumen || {};
+    const porTec = (data.por_tecnico && data.por_tecnico[0]) || null;
+    const activas = porTec ? porTec.activas : (resumen.pendientes||0) + (resumen.trabajando||0);
+    const terminadas = porTec ? porTec.terminadas : (resumen.terminadas||0);
+
+    document.getElementById("te-activas").textContent = activas ?? "—";
+    document.getElementById("te-terminadas").textContent = terminadas ?? "—";
+    document.getElementById("te-entaller").textContent = resumen.en_taller ?? "—";
+
+    const inconsistencias = data.inconsistencias || [];
+    const alerta = document.getElementById("te-alerta");
+    if(inconsistencias.length > 0){
+      alerta.textContent = inconsistencias.length +
+        (inconsistencias.length === 1 ? " moto tuya para revisar en Motokontrol." : " motos tuyas para revisar en Motokontrol.");
+      alerta.style.display = "block";
+    }else{
+      alerta.style.display = "none";
+    }
+  }catch(e){
+    document.getElementById("te-activas").textContent = "—";
+    document.getElementById("te-terminadas").textContent = "—";
+    document.getElementById("te-entaller").textContent = "—";
+    const alerta = document.getElementById("te-alerta");
+    alerta.textContent = "No se pudo cargar el estado del taller.";
+    alerta.style.cssText = "display:block;margin:0 0 12px;padding:10px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--muted);font-size:13px;";
+  }
+}
+cargarTallerEstado();
+setInterval(cargarTallerEstado, 3600000);
 </script>
 </body>
 </html>

@@ -339,6 +339,46 @@ guard(["manager","developer"]);
     <button onclick="loadData()" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
   </div>
 
+  <!-- ESTADO DEL TALLER -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="section-title">Estado del taller</div>
+    <div class="kpi-grid" style="margin-bottom:14px">
+      <div class="kpi-card">
+        <div class="kpi-label">En taller</div>
+        <div class="kpi-value" id="te-enTaller">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Trabajando</div>
+        <div class="kpi-value gold" id="te-trabajando">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Terminadas</div>
+        <div class="kpi-value" id="te-terminadas">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Entregadas mes</div>
+        <div class="kpi-value" id="te-entregadasMes">—</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <span class="badge badge-red" id="te-criticas">Críticas 0</span>
+      <span class="badge badge-gold" id="te-revisar">Revisar 0</span>
+      <span id="te-error" style="display:none;font-size:12px;color:var(--text-muted)">No se pudo cargar el estado del taller.</span>
+    </div>
+    <div class="section-title">Listas para entrega</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Placa</th><th>Técnico</th><th>Días en taller</th></tr>
+        </thead>
+        <tbody id="te-listasEntrega">
+          <tr><td colspan="3" class="loading">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:10px">Actualiza cada hora.</div>
+  </div>
+
   <!-- FILTROS -->
   <div class="card filters-card">
     <div class="section-title">Filtros</div>
@@ -838,6 +878,39 @@ guard(["manager","developer"]);
     }).join('');
   }
 
+  // ── ESTADO DEL TALLER ──────────────────────────────────────────────────
+  async function loadTallerEstado() {
+    try {
+      const res = await authFetch(`${WORKER_URL}/taller-estado`);
+      const data = await res.json();
+      const r = data.resumen || {};
+
+      document.getElementById('te-enTaller').textContent = r.en_taller ?? '—';
+      document.getElementById('te-trabajando').textContent = r.trabajando ?? '—';
+      document.getElementById('te-terminadas').textContent = r.terminadas ?? '—';
+      document.getElementById('te-entregadasMes').textContent = r.entregadas_mes ?? '—';
+      document.getElementById('te-criticas').textContent = `Críticas ${data.criticas ?? 0}`;
+      document.getElementById('te-revisar').textContent = `Revisar ${data.revisar ?? 0}`;
+
+      const listas = data.listas_entrega || [];
+      const tbody = document.getElementById('te-listasEntrega');
+      if (!listas.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="loading">Sin motos pendientes de entrega</td></tr>';
+      } else {
+        tbody.innerHTML = listas.map(o => `<tr>
+          <td><strong>${o.placa || '—'}</strong></td>
+          <td>${o.tecnico || '—'}</td>
+          <td>${o.dias_en_taller ?? '—'}</td>
+        </tr>`).join('');
+      }
+      document.getElementById('te-error').style.display = 'none';
+    } catch (err) {
+      document.getElementById('te-error').style.display = 'inline';
+      document.getElementById('te-listasEntrega').innerHTML =
+        '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
+    }
+  }
+
   // ── TOAST ──────────────────────────────────────────────────────────────
   function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
@@ -856,6 +929,8 @@ guard(["manager","developer"]);
   setInterval(updateClock, 60000);
   setInterval(loadData, 300000);
   loadData();
+  loadTallerEstado();
+  setInterval(loadTallerEstado, 3600000);
 
   // ── PANEL CHAT ─────────────────────────────────────────────────────────
   const PANEL_SYSTEM = 'Eres el asistente operativo del taller CST Royal Enfield Zona T. Tienes acceso a datos del taller. Responde preguntas sobre motos en taller, tiempos, técnicos, upsell y facturación. Sé directo y usa números cuando los tengas. Responde en el idioma en que te escriban.';
