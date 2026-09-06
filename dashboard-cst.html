@@ -27,9 +27,13 @@ var cstSession = guard(["manager","developer"]);
     --error: #FF4D4D;
     --success: #2ECC71;
     --red-soft: rgba(200,16,46,0.15);
+    --c-pend: #3B82F6;
+    --c-trab: #A855F7;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { overflow-x: hidden; }
 
   body {
     background: var(--bg);
@@ -39,14 +43,14 @@ var cstSession = guard(["manager","developer"]);
     padding: 24px 16px 60px;
   }
 
-  .container { max-width: 1200px; margin: 0 auto; }
+  .container { max-width: 1200px; margin: 0 auto; min-width: 0; }
 
   /* HEADER */
   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
     padding-bottom: 20px;
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
@@ -85,6 +89,7 @@ var cstSession = guard(["manager","developer"]);
     border-radius: 12px;
     padding: 20px;
     border: 1px solid var(--border);
+    min-width: 0;
   }
 
   .section-title {
@@ -162,7 +167,7 @@ var cstSession = guard(["manager","developer"]);
 
   .apply-btn:hover { opacity: 0.85; }
 
-  /* KPIs */
+  /* KPIs (Airtable, legado) */
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -175,6 +180,7 @@ var cstSession = guard(["manager","developer"]);
     border-radius: 12px;
     padding: 18px 20px;
     border: 1px solid var(--border);
+    min-width: 0;
   }
 
   .kpi-label {
@@ -202,7 +208,7 @@ var cstSession = guard(["manager","developer"]);
     margin-top: 6px;
   }
 
-  /* CHARTS */
+  /* CHARTS (Airtable, legado) */
   .charts-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -215,6 +221,7 @@ var cstSession = guard(["manager","developer"]);
     border-radius: 12px;
     padding: 16px;
     border: 1px solid var(--border);
+    min-width: 0;
   }
 
   .chart-card .section-title { margin-bottom: 12px; }
@@ -231,12 +238,13 @@ var cstSession = guard(["manager","developer"]);
     overflow: hidden;
   }
 
-  .table-wrap { overflow-x: auto; }
+  .table-wrap { overflow-x: hidden; min-width: 0; }
 
   table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+    table-layout: fixed;
   }
 
   thead th {
@@ -248,7 +256,6 @@ var cstSession = guard(["manager","developer"]);
     padding: 10px 14px;
     text-align: left;
     border-bottom: 1px solid var(--border);
-    white-space: nowrap;
   }
 
   tbody td {
@@ -256,6 +263,8 @@ var cstSession = guard(["manager","developer"]);
     border-bottom: 1px solid rgba(58,58,58,0.5);
     color: var(--text);
     vertical-align: middle;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   tbody tr:last-child td { border-bottom: none; }
@@ -298,6 +307,82 @@ var cstSession = guard(["manager","developer"]);
   }
   .fuente-btn.active { background: var(--red); color: white; }
 
+  /* ── VISIÓN GENERAL (Motokontrol / manager) ── */
+  .mg-note { font-size: 11px; color: var(--text-muted); margin: -10px 0 18px; }
+
+  .mg-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .mg-servicios-list { display: flex; flex-direction: column; gap: 10px; }
+  .mg-servicio-row { min-width: 0; }
+  .mg-servicio-head {
+    display: flex; justify-content: space-between; gap: 8px;
+    font-size: 12.5px; margin-bottom: 4px;
+  }
+  .mg-servicio-head .nombre {
+    font-weight: 600; overflow-wrap: break-word; word-break: break-word; min-width: 0;
+  }
+  .mg-servicio-head .cant { color: var(--text-muted); font-family: 'Inter', sans-serif; flex-shrink: 0; }
+  .mg-servicio-bar { height: 8px; border-radius: 99px; background: var(--input-bg); overflow: hidden; }
+  .mg-servicio-bar i { display: block; height: 100%; background: var(--gold); }
+
+  .mg-charts-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mg-quality-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .mg-quality-donut { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+  .mg-quality-pct {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; pointer-events: none;
+  }
+  .mg-quality-pct .n { font-size: 22px; font-weight: 700; line-height: 1; }
+  .mg-quality-pct .l { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+  .mg-quality-stats { display: flex; flex-direction: column; gap: 8px; font-size: 13px; min-width: 0; }
+  .mg-quality-stats .fila { display: flex; align-items: center; gap: 8px; }
+  .mg-quality-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .mg-quality-dot.limpia { background: var(--success); }
+  .mg-quality-dot.sucia { background: var(--error); }
+
+  .mg-bottleneck-note { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+  .mg-bottleneck-note strong { color: var(--text); }
+
+  .mg-tables-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mg-table-scroll { max-height: 340px; overflow-y: auto; overflow-x: hidden; }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .mg-kpis { grid-template-columns: repeat(2, 1fr); }
+    .mg-charts-grid { grid-template-columns: 1fr; }
+    .mg-tables-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .filters-row { flex-direction: column; }
+    .kpi-value { font-size: 22px; }
+    .mg-kpis { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 360px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .mg-kpis { grid-template-columns: 1fr; }
+  }
+
   /* TOAST */
   .toast {
     position: fixed;
@@ -326,20 +411,7 @@ var cstSession = guard(["manager","developer"]);
     padding: 20px;
   }
 
-  @media (max-width: 900px) {
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .charts-grid { grid-template-columns: 1fr; }
-  }
-
-  @media (max-width: 560px) {
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-    .filters-row { flex-direction: column; }
-    .kpi-value { font-size: 22px; }
-  }
-
-  @media (max-width: 360px) {
-    .kpi-grid { grid-template-columns: 1fr; }
-  }
+  @media (prefers-reduced-motion: reduce) { *{ transition: none !important; } }
 </style>
 </head>
 <body>
@@ -350,58 +422,20 @@ var cstSession = guard(["manager","developer"]);
     <a href="index.html" style="display:inline-flex;align-items:center;gap:4px;color:#C9A84C;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0">← Menú</a>
     <img src="assets/re-blanco.png" alt="Royal Enfield" style="height:36px;width:auto;flex-shrink:0">
     <div class="header-left">
-      <h1>CST Royal Enfield</h1>
-      <p>Dashboard Operativo — Zona T</p>
+      <h1 id="titulo">Visión general</h1>
+      <p>CST Royal Enfield · Zona T</p>
     </div>
     <div class="header-clock">
       <span class="time" id="clockTime">--:--</span>
       <span id="clockDate"></span>
       <span id="lastUpdate" style="display:none;font-size:11px;color:var(--text-muted);margin-top:4px;display:block"></span>
     </div>
-    <button onclick="loadData()" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
+    <button onclick="loadData(); cargarVisionGeneral();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
   </div>
 
-  <!-- ESTADO DEL TALLER -->
-  <div class="card" style="margin-bottom:20px">
-    <div class="section-title">Estado del taller</div>
-    <div class="kpi-grid" style="margin-bottom:14px">
-      <div class="kpi-card">
-        <div class="kpi-label">En taller</div>
-        <div class="kpi-value" id="te-enTaller">—</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Trabajando</div>
-        <div class="kpi-value gold" id="te-trabajando">—</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Terminadas</div>
-        <div class="kpi-value" id="te-terminadas">—</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Entregadas mes</div>
-        <div class="kpi-value" id="te-entregadasMes">—</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-      <span class="badge badge-red" id="te-criticas">Críticas 0</span>
-      <span class="badge badge-gold" id="te-revisar">Revisar 0</span>
-      <span id="te-error" style="display:none;font-size:12px;color:var(--text-muted)">No se pudo cargar el estado del taller.</span>
-    </div>
-    <div class="section-title">Listas para entrega</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Placa</th><th>Técnico</th><th>Días en taller</th></tr>
-        </thead>
-        <tbody id="te-listasEntrega">
-          <tr><td colspan="3" class="loading">Cargando...</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:10px">Actualiza cada hora.</div>
-  </div>
+  <div class="mg-note">Actualiza cada hora.</div>
 
-  <!-- FUENTE TOGGLE (solo developer) -->
+  <!-- FUENTE TOGGLE (solo developer) — arriba, antes del contenido -->
   <div id="fuente-toggle" style="display:none;margin-bottom:20px">
     <div class="fuente-toggle">
       <button type="button" id="btn-fuente-mk" class="fuente-btn active" onclick="mostrarFuente('mk')">Motokontrol</button>
@@ -409,7 +443,109 @@ var cstSession = guard(["manager","developer"]);
     </div>
   </div>
 
-  <div id="airtable-section">
+  <!-- ═══ VISIÓN GENERAL (Motokontrol) ═══ -->
+  <div id="motokontrol-section">
+
+    <div class="mg-kpis">
+      <div class="card">
+        <div class="kpi-label">En taller</div>
+        <div class="kpi-value" id="mg-enTaller">—</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Pendientes +24h</div>
+        <div class="kpi-value red" id="mg-pendientes24h">—</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Entregadas mes</div>
+        <div class="kpi-value" id="mg-entregasMes">—</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Entrega a tiempo</div>
+        <div class="kpi-value gold" id="mg-entregaTiempo">—</div>
+        <div class="kpi-sub" id="mg-entregaTiempo-sub">Próximamente</div>
+      </div>
+    </div>
+
+    <div class="mg-kpis" style="margin-bottom:20px">
+      <div class="card">
+        <div class="kpi-label">Ticket promedio</div>
+        <div class="kpi-value" id="mg-ticket">—</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Facturado</div>
+        <div class="kpi-value" id="mg-facturado">$—</div>
+        <div class="kpi-sub">Siigo pend.</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Tasa reingreso</div>
+        <div class="kpi-value" id="mg-reingreso">—</div>
+        <div class="kpi-sub" id="mg-reingreso-sub">Próximamente</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">A revisar</div>
+        <div class="kpi-value red" id="mg-revisar">—</div>
+        <div class="kpi-sub" id="mg-revisar-sub"></div>
+      </div>
+    </div>
+
+    <div class="mg-charts-grid">
+      <div class="card">
+        <div class="section-title">Servicios más frecuentes</div>
+        <div class="mg-servicios-list" id="mg-serviciosFrecuentes">
+          <div class="loading">Cargando…</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title">Calidad de datos</div>
+        <div class="mg-quality-wrap" id="mg-calidadDatos">
+          <div class="loading">Cargando…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="section-title">¿Dónde se atasca?</div>
+      <div class="mg-bottleneck-note">
+        <strong>Datos disponibles pronto.</strong> El tiempo promedio por estado (cuánto tarda una moto en
+        pasar de pendiente a en atención, y de ahí a atendida) se calculará una vez el historial de
+        estados acumule suficientes datos.
+      </div>
+    </div>
+
+    <div class="mg-tables-grid">
+      <div class="card">
+        <div class="section-title">Últimas salidas</div>
+        <div class="table-wrap mg-table-scroll">
+          <table>
+            <thead>
+              <tr><th>Placa</th><th>Técnico</th><th>Fecha</th></tr>
+            </thead>
+            <tbody id="mg-ultimasSalidas">
+              <tr><td colspan="3" class="loading">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title">Listas para entrega</div>
+        <div class="table-wrap mg-table-scroll">
+          <table>
+            <thead>
+              <tr><th>Placa</th><th>Técnico</th><th>Días</th></tr>
+            </thead>
+            <tbody id="mg-listasEntrega">
+              <tr><td colspan="3" class="loading">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="mg-error" style="display:none;font-size:12px;color:var(--text-muted);margin:-10px 0 20px">No se pudo cargar el estado del taller.</div>
+  </div>
+  <!-- /motokontrol-section -->
+
+  <div id="airtable-section" style="display:none">
   <!-- FILTROS -->
   <div class="card filters-card">
     <div class="section-title">Filtros</div>
@@ -554,6 +690,21 @@ var cstSession = guard(["manager","developer"]);
   let chartInstances = {};
   let dashboardData = {};
 
+  /* Formato de plata colombiano: 1407795 -> $1.407.795 */
+  function fmtPesos(n){
+    return "$" + new Intl.NumberFormat("es-CO").format(Math.round(Number(n) || 0));
+  }
+
+  /* fecha_entrega/fecha_ingreso vienen de ordenes_mk (ej. "2026-08-30" o
+     con hora). Nos quedamos con los primeros 10 caracteres y formateamos
+     dd/mm/aaaa en horario local. */
+  function fmtFecha(fecha){
+    if(!fecha) return "—";
+    const d = new Date(String(fecha).slice(0, 10) + "T00:00:00");
+    if(isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+
   // ── CLOCK ──────────────────────────────────────────────────────────────
   function updateClock() {
     const now = new Date();
@@ -563,7 +714,7 @@ var cstSession = guard(["manager","developer"]);
       now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  // ── FILTERS ────────────────────────────────────────────────────────────
+  // ── FILTERS (Airtable, legado) ────────────────────────────────────────
   function setDefaultDates() {
     const today = new Date();
     const ago30 = new Date();
@@ -582,7 +733,7 @@ var cstSession = guard(["manager","developer"]);
 
   function applyFilters() { loadData(); }
 
-  // ── DATA LOADING ───────────────────────────────────────────────────────
+  // ── DATA LOADING (Airtable, legado) ──────────────────────────────────
   async function loadData() {
     const filters = getFilters();
 
@@ -681,7 +832,7 @@ var cstSession = guard(["manager","developer"]);
     }
   }
 
-  // ── CÁLCULO DE DATOS ───────────────────────────────────────────────────
+  // ── CÁLCULO DE DATOS (Airtable, legado) ─────────────────────────────
   function calcularDatos(ingreso, salida, filters) {
     const placasConSalida = new Set(salida.map(r => (r['Placa'] || '').toUpperCase()).filter(Boolean));
     const ahora = new Date();
@@ -771,7 +922,7 @@ var cstSession = guard(["manager","developer"]);
     return days;
   }
 
-  // ── KPIs ───────────────────────────────────────────────────────────────
+  // ── KPIs (Airtable, legado) ──────────────────────────────────────────
   function renderKPIs(data) {
     const k = data.kpis;
     const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
@@ -787,7 +938,7 @@ var cstSession = guard(["manager","developer"]);
     document.getElementById('kpi-reingreso-sub').textContent = k.reingresosCount + ' de ' + k.totalIngresos + ' ingresos';
   }
 
-  // ── CHARTS ─────────────────────────────────────────────────────────────
+  // ── CHARTS (Airtable, legado) ────────────────────────────────────────
   const CHART_DEFAULTS = {
     color: '#F0F0F0',
     plugins: {
@@ -881,7 +1032,7 @@ var cstSession = guard(["manager","developer"]);
     });
   }
 
-  // ── TABLE ──────────────────────────────────────────────────────────────
+  // ── TABLE (Airtable, legado) ─────────────────────────────────────────
   function renderTable(salidas) {
     const tbody = document.getElementById('tablaBody');
     if (!salidas || salidas.length === 0) {
@@ -911,50 +1062,144 @@ var cstSession = guard(["manager","developer"]);
     }).join('');
   }
 
-  // ── ESTADO DEL TALLER ──────────────────────────────────────────────────
-  async function loadTallerEstado() {
+  // ── VISIÓN GENERAL (Motokontrol / manager) ────────────────────────────
+  function renderServiciosFrecuentes(lista){
+    const cont = document.getElementById('mg-serviciosFrecuentes');
+    if(!lista || !lista.length){
+      cont.innerHTML = '<div class="loading">Sin datos</div>';
+      return;
+    }
+    const max = Math.max(1, ...lista.map(s => s.cantidad || 0));
+    cont.innerHTML = lista.map(s => {
+      const pct = Math.round(((s.cantidad || 0) / max) * 100);
+      return (
+        '<div class="mg-servicio-row">' +
+          '<div class="mg-servicio-head">' +
+            '<span class="nombre">' + (s.servicio || 'Sin descripción') + '</span>' +
+            '<span class="cant">' + (s.cantidad || 0) + '</span>' +
+          '</div>' +
+          '<div class="mg-servicio-bar"><i style="width:' + pct + '%"></i></div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function renderCalidadDatos(cd){
+    const cont = document.getElementById('mg-calidadDatos');
+    const limpias = cd?.limpias ?? 0;
+    const sucias = cd?.sucias ?? 0;
+    const pct = cd?.pct_limpio ?? 0;
+
+    cont.innerHTML =
+      '<div class="mg-quality-donut"><canvas id="chartCalidadDatos"></canvas>' +
+        '<div class="mg-quality-pct"><span class="n">' + pct + '%</span><span class="l">limpio</span></div>' +
+      '</div>' +
+      '<div class="mg-quality-stats">' +
+        '<div class="fila"><span class="mg-quality-dot limpia"></span>' + limpias + ' limpias</div>' +
+        '<div class="fila"><span class="mg-quality-dot sucia"></span>' + sucias + ' con inconsistencia</div>' +
+      '</div>';
+
+    destroyChart('calidadDatos');
+    chartInstances.calidadDatos = new Chart(document.getElementById('chartCalidadDatos'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Limpias', 'Con inconsistencia'],
+        datasets: [{ data: [limpias, sucias], backgroundColor: ['#2ECC71', '#FF4D4D'], borderWidth: 0 }],
+      },
+      options: {
+        cutout: '72%',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#2E2E2E', titleColor: '#C9A84C', bodyColor: '#F0F0F0',
+            borderColor: '#3A3A3A', borderWidth: 1,
+          },
+        },
+      },
+    });
+  }
+
+  function renderUltimasSalidas(lista){
+    const tbody = document.getElementById('mg-ultimasSalidas');
+    if(!lista || !lista.length){
+      tbody.innerHTML = '<tr><td colspan="3" class="loading">Sin salidas registradas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(o => (
+      '<tr>' +
+        '<td><strong>' + (o.placa || '—') + '</strong></td>' +
+        '<td>' + (o.tecnico || '—') + '</td>' +
+        '<td>' + fmtFecha(o.fecha_entrega) + '</td>' +
+      '</tr>'
+    )).join('');
+  }
+
+  function renderListasEntrega(lista){
+    const tbody = document.getElementById('mg-listasEntrega');
+    if(!lista || !lista.length){
+      tbody.innerHTML = '<tr><td colspan="3" class="loading">Sin motos pendientes de entrega</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(o => (
+      '<tr>' +
+        '<td><strong>' + (o.placa || '—') + '</strong></td>' +
+        '<td>' + (o.tecnico || '—') + '</td>' +
+        '<td>' + (o.dias_en_taller ?? '—') + '</td>' +
+      '</tr>'
+    )).join('');
+  }
+
+  async function cargarVisionGeneral() {
     try {
       const res = await authFetch(`${WORKER_URL}/taller-estado`);
       const data = await res.json();
       const r = data.resumen || {};
+      const mg = data.manager || {};
 
-      document.getElementById('te-enTaller').textContent = r.en_taller ?? '—';
-      document.getElementById('te-trabajando').textContent = r.trabajando ?? '—';
-      document.getElementById('te-terminadas').textContent = r.terminadas ?? '—';
-      document.getElementById('te-entregadasMes').textContent = r.entregadas_mes ?? '—';
-      document.getElementById('te-criticas').textContent = `Críticas ${data.criticas ?? 0}`;
-      document.getElementById('te-revisar').textContent = `Revisar ${data.revisar ?? 0}`;
+      document.getElementById('mg-enTaller').textContent = r.en_taller ?? '—';
+      document.getElementById('mg-pendientes24h').textContent = mg.pendientes_mas_24h ?? '—';
+      document.getElementById('mg-entregasMes').textContent = r.entregadas_mes ?? '—';
+      document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
+      document.getElementById('mg-revisar').textContent = data.criticas ?? 0;
+      document.getElementById('mg-revisar-sub').textContent = (data.revisar ?? 0) + ' más por revisar';
 
-      const listas = data.listas_entrega || [];
-      const tbody = document.getElementById('te-listasEntrega');
-      if (!listas.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading">Sin motos pendientes de entrega</td></tr>';
-      } else {
-        tbody.innerHTML = listas.map(o => `<tr>
-          <td><strong>${o.placa || '—'}</strong></td>
-          <td>${o.tecnico || '—'}</td>
-          <td>${o.dias_en_taller ?? '—'}</td>
-        </tr>`).join('');
-      }
-      document.getElementById('te-error').style.display = 'none';
+      renderServiciosFrecuentes(mg.servicios_frecuentes || []);
+      renderCalidadDatos(mg.calidad_datos || {});
+      renderUltimasSalidas(mg.ultimas_salidas || []);
+      renderListasEntrega(data.listas_entrega || []);
+
+      document.getElementById('mg-error').style.display = 'none';
     } catch (err) {
-      document.getElementById('te-error').style.display = 'inline';
-      document.getElementById('te-listasEntrega').innerHTML =
-        '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
+      document.getElementById('mg-enTaller').textContent = '—';
+      document.getElementById('mg-pendientes24h').textContent = '—';
+      document.getElementById('mg-entregasMes').textContent = '—';
+      document.getElementById('mg-ticket').textContent = '—';
+      document.getElementById('mg-revisar').textContent = '—';
+      document.getElementById('mg-revisar-sub').textContent = '';
+      document.getElementById('mg-serviciosFrecuentes').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-calidadDatos').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-ultimasSalidas').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
+      document.getElementById('mg-listasEntrega').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
+      document.getElementById('mg-error').style.display = 'block';
     }
   }
 
   // ── VISIBILIDAD SECCION AIRTABLE (por rol) ────────────────────────────
   function mostrarFuente(cual) {
+    const seccionMk = document.getElementById('motokontrol-section');
     const seccionAirtable = document.getElementById('airtable-section');
     const btnMk = document.getElementById('btn-fuente-mk');
     const btnAt = document.getElementById('btn-fuente-at');
-    if (!seccionAirtable) return;
+    if (!seccionAirtable || !seccionMk) return;
     if (cual === 'airtable') {
+      seccionMk.style.display = 'none';
       seccionAirtable.style.display = 'block';
       if (btnMk) btnMk.classList.remove('active');
       if (btnAt) btnAt.classList.add('active');
     } else {
+      seccionMk.style.display = 'block';
       seccionAirtable.style.display = 'none';
       if (btnMk) btnMk.classList.add('active');
       if (btnAt) btnAt.classList.remove('active');
@@ -969,7 +1214,7 @@ var cstSession = guard(["manager","developer"]);
       mostrarFuente('mk');
     } else {
       if (toggle) toggle.style.display = 'none';
-      mostrarFuente('mk'); // oculta la seccion Airtable para manager
+      mostrarFuente('mk'); // manager solo ve Motokontrol
     }
   }
 
@@ -992,8 +1237,8 @@ var cstSession = guard(["manager","developer"]);
   setInterval(updateClock, 60000);
   setInterval(loadData, 300000);
   loadData();
-  loadTallerEstado();
-  setInterval(loadTallerEstado, 3600000);
+  cargarVisionGeneral();
+  setInterval(cargarVisionGeneral, 3600000);
 
   // ── PANEL CHAT ─────────────────────────────────────────────────────────
   const PANEL_SYSTEM = 'Eres el asistente operativo del taller CST Royal Enfield Zona T. Tienes acceso a datos del taller. Responde preguntas sobre motos en taller, tiempos, técnicos, upsell y facturación. Sé directo y usa números cuando los tengas. Responde en el idioma en que te escriban.';
