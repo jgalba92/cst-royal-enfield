@@ -337,19 +337,26 @@ var cstSession = guard(["manager","developer"]);
     margin-bottom: 20px;
   }
 
-  .mg-quality-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .mg-quality-donut { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+  .mg-quality-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .mg-quality-donut { position: relative; width: 190px; height: 190px; flex-shrink: 0; margin: 0 auto; }
   .mg-quality-pct {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     flex-direction: column; pointer-events: none;
   }
-  .mg-quality-pct .n { font-size: 22px; font-weight: 700; line-height: 1; }
-  .mg-quality-pct .l { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
-  .mg-quality-stats { display: flex; flex-direction: column; gap: 8px; font-size: 13px; min-width: 0; }
-  .mg-quality-stats .fila { display: flex; align-items: center; gap: 8px; }
+  .mg-quality-pct .n { font-size: 34px; font-weight: 700; line-height: 1; }
+  .mg-quality-pct .l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+
+  .mg-quality-breakdown { display: flex; flex-direction: column; gap: 12px; font-size: 13px; min-width: 0; width: 100%; }
+  .mg-quality-row { min-width: 0; }
+  .mg-quality-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+  .mg-quality-row-head .lbl { display: flex; align-items: center; gap: 7px; font-weight: 600; min-width: 0; }
+  .mg-quality-row-head .val { color: var(--text-muted); flex-shrink: 0; }
+  .mg-quality-row-bar { height: 7px; border-radius: 99px; background: var(--input-bg); overflow: hidden; }
+  .mg-quality-row-bar i { display: block; height: 100%; border-radius: 99px; }
   .mg-quality-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .mg-quality-dot.limpia { background: var(--success); }
-  .mg-quality-dot.sucia { background: var(--error); }
+  .mg-quality-dot.limpia, .mg-quality-row-bar i.limpia { background: var(--success); }
+  .mg-quality-dot.critica, .mg-quality-row-bar i.critica { background: var(--error); }
+  .mg-quality-dot.revisar, .mg-quality-row-bar i.revisar { background: var(--gold); }
 
   .mg-bottleneck-note { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
   .mg-bottleneck-note strong { color: var(--text); }
@@ -1084,27 +1091,45 @@ var cstSession = guard(["manager","developer"]);
     }).join('');
   }
 
-  function renderCalidadDatos(cd){
+  /* Fila del desglose: punto de color + etiqueta + valor + barra proporcional
+     al total del desglose (limpias + críticas + revisar). */
+  function filaCalidad(clase, label, valor, total){
+    const pctBarra = total > 0 ? Math.round((valor / total) * 100) : 0;
+    return (
+      '<div class="mg-quality-row">' +
+        '<div class="mg-quality-row-head">' +
+          '<span class="lbl"><span class="mg-quality-dot ' + clase + '"></span>' + label + '</span>' +
+          '<span class="val">' + valor + '</span>' +
+        '</div>' +
+        '<div class="mg-quality-row-bar"><i class="' + clase + '" style="width:' + pctBarra + '%"></i></div>' +
+      '</div>'
+    );
+  }
+
+  function renderCalidadDatos(cd, criticas, revisar){
     const cont = document.getElementById('mg-calidadDatos');
     const limpias = cd?.limpias ?? 0;
-    const sucias = cd?.sucias ?? 0;
+    criticas = criticas ?? 0;
+    revisar = revisar ?? 0;
     const pct = cd?.pct_limpio ?? 0;
+    const totalDesglose = limpias + criticas + revisar;
 
     cont.innerHTML =
       '<div class="mg-quality-donut"><canvas id="chartCalidadDatos"></canvas>' +
         '<div class="mg-quality-pct"><span class="n">' + pct + '%</span><span class="l">limpio</span></div>' +
       '</div>' +
-      '<div class="mg-quality-stats">' +
-        '<div class="fila"><span class="mg-quality-dot limpia"></span>' + limpias + ' limpias</div>' +
-        '<div class="fila"><span class="mg-quality-dot sucia"></span>' + sucias + ' con inconsistencia</div>' +
+      '<div class="mg-quality-breakdown">' +
+        filaCalidad('limpia', 'Limpias', limpias, totalDesglose) +
+        filaCalidad('critica', 'Críticas', criticas, totalDesglose) +
+        filaCalidad('revisar', 'Por revisar', revisar, totalDesglose) +
       '</div>';
 
     destroyChart('calidadDatos');
     chartInstances.calidadDatos = new Chart(document.getElementById('chartCalidadDatos'), {
       type: 'doughnut',
       data: {
-        labels: ['Limpias', 'Con inconsistencia'],
-        datasets: [{ data: [limpias, sucias], backgroundColor: ['#2ECC71', '#FF4D4D'], borderWidth: 0 }],
+        labels: ['Limpias', 'Críticas', 'Por revisar'],
+        datasets: [{ data: [limpias, criticas, revisar], backgroundColor: ['#2ECC71', '#FF4D4D', '#C9A84C'], borderWidth: 0 }],
       },
       options: {
         cutout: '72%',
@@ -1166,7 +1191,7 @@ var cstSession = guard(["manager","developer"]);
       document.getElementById('mg-revisar-sub').textContent = (data.revisar ?? 0) + ' más por revisar';
 
       renderServiciosFrecuentes(mg.servicios_frecuentes || []);
-      renderCalidadDatos(mg.calidad_datos || {});
+      renderCalidadDatos(mg.calidad_datos || {}, data.criticas, data.revisar);
       renderUltimasSalidas(mg.ultimas_salidas || []);
       renderListasEntrega(data.listas_entrega || []);
 
