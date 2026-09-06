@@ -5,47 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
 <script src="page-info.js?v=1"></script>
-<title>CST · Datos del taller</title>
+<title>CST · Rendimiento del equipo</title>
 <style>
   :root{
     --bg:#1A1A1A; --panel:#242424; --panel-2:#2E2E2E; --line:#3A3A3A;
     --ink:#F0F0F0; --muted:#888; --accent:#C8102E; --accent-ink:#C9A84C;
     --ok:#2ECC71; --warn:#C9A84C; --bad:#FF4D4D; --radius:10px;
+    --c-pend:#3B82F6; --c-trab:#A855F7; --c-listo:#2ECC71;
     --sans:'Inter','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{overflow-x:hidden;}
   body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;}
-  .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 60px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 60px;min-width:0;}
+
   .top{display:flex;justify-content:space-between;align-items:center;
     padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap;gap:10px;}
   .top .who{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;}
   .top h1{font-size:22px;font-weight:650;margin-top:4px;}
   .logout{background:none;border:1px solid var(--line);color:var(--muted);
-    padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+    padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
   .logout:hover{border-color:var(--accent);color:var(--ink);}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:26px;}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .refresh-note{font-size:11px;color:var(--muted);margin:-16px 0 22px;}
+
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 12px;font-weight:600;}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:26px;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;min-width:0;}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;}
   .kpi .val{font-size:28px;font-weight:700;margin-top:8px;letter-spacing:-.02em;}
-  .kpi .val.warn{color:var(--warn);}
-  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 0 12px;font-weight:600;}
-  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
-  th,td{padding:12px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--line);}
-  th{background:var(--panel-2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
-  th.num,td.num{text-align:center;}
-  tr:last-child td{border-bottom:none;}
-  td.nombre{font-weight:600;}
-  .pill{display:inline-block;min-width:34px;font-family:var(--mono);font-size:13px;padding:3px 9px;border-radius:99px;text-align:center;}
-  .pill.ok{background:rgba(62,201,138,.12);color:var(--ok);}
-  .pill.warn{background:rgba(201,168,76,.14);color:var(--warn);}
-  .pill.bad{background:rgba(255,77,77,.14);color:var(--bad);}
-  .pct-bar{height:6px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-top:5px;}
-  .pct-bar i{display:block;height:100%;background:var(--ok);}
-  .loading,.empty{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
-  .foot-note{margin-top:14px;font-size:12px;color:var(--muted);}
-  .fuente-toggle{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px;}
-  .fuente-btn{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 16px;border-radius:6px;cursor:pointer;}
-  .fuente-btn.active{background:var(--accent);color:#fff;}
+  .kpi.bad{border-left:3px solid var(--bad);}
+  .kpi.bad .val{color:var(--bad);}
+
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;min-width:0;}
+  .empty,.loading{padding:16px;text-align:center;color:var(--muted);font-size:13px;}
+
+  .carga-row{margin-bottom:14px;}
+  .carga-row:last-child{margin-bottom:0;}
+  .carga-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;gap:8px;}
+  .carga-head .nombre{font-weight:600;overflow-wrap:break-word;word-break:break-word;min-width:0;}
+  .carga-head .nombre.alerta{color:var(--bad);}
+  .carga-head .nums{color:var(--muted);font-family:var(--mono);flex-shrink:0;}
+  .carga-bar{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden;display:flex;}
+  .carga-bar i{display:block;height:100%;}
+  .carga-bar i.activas{background:var(--c-trab);}
+  .carga-bar i.terminadas{background:var(--c-listo);}
+  .carga-row.alerta .carga-bar i.activas{background:var(--bad);}
+
+  .cuello-nota{color:var(--muted);font-size:13px;line-height:1.5;}
+  .cuello-nota strong{color:var(--ink);}
+
+  .filtros{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:24px 0 14px;}
+  .filtro-campo{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .filtro-campo label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;}
+  .filtro-campo select,.filtro-campo input{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:7px;color:var(--ink);
+    font-family:var(--sans);font-size:13px;padding:8px 10px;min-width:0;}
+  .filtro-campo select:focus,.filtro-campo input:focus{outline:none;border-color:var(--accent);}
+  .btn-exportar{margin-left:auto;background:none;border:1px solid var(--accent-ink);color:var(--accent-ink);
+    border-radius:7px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
+  .btn-exportar:hover{background:var(--accent-ink);color:#1A1A1A;}
+  .btn-exportar:disabled{opacity:.4;cursor:default;}
+
+  .tabla-wrap{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-width:0;}
+  .tabla-scroll{max-height:520px;overflow-y:auto;overflow-x:hidden;}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  th,td{padding:10px 12px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line);
+    overflow-wrap:break-word;word-break:break-word;}
+  th{background:var(--panel-2);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    position:sticky;top:0;z-index:1;}
+  tbody tr{background:var(--panel);}
+  tbody tr:hover{background:var(--panel-2);}
+  tbody tr:last-child td{border-bottom:none;}
+  td.placa{font-family:var(--mono);font-weight:700;}
+  td.dias,th.dias,td.valor,th.valor{text-align:right;font-family:var(--mono);}
+  .estado-pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;}
+  .estado-pill.pend{background:rgba(59,130,246,.15);color:var(--c-pend);}
+  .estado-pill.trab{background:rgba(168,85,247,.15);color:var(--c-trab);}
+  .estado-pill.listo{background:rgba(46,204,113,.15);color:var(--c-listo);}
+
+  @media (max-width:640px){
+    th,td{padding:8px 8px;font-size:11.5px;}
+    .btn-exportar{margin-left:0;width:100%;}
+  }
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
@@ -57,215 +100,237 @@
         <img src="assets/re-blanco.png" alt="Royal Enfield" style="height:36px;width:auto">
         <div>
           <div class="who">Datos del taller</div>
-          <h1>Rendimiento del equipo</h1>
+          <h1 id="titulo">Rendimiento del equipo</h1>
         </div>
       </div>
       <button class="logout" id="logout">Salir</button>
     </div>
+    <div class="refresh-note">Actualiza cada hora.</div>
 
-    <h2>Estado del taller</h2>
-    <div class="kpis" style="margin-bottom:18px">
-      <div class="kpi"><div class="label">En taller</div><div class="val" id="te-enTaller">—</div></div>
-      <div class="kpi"><div class="label">Trabajando</div><div class="val warn" id="te-trabajando">—</div></div>
-      <div class="kpi"><div class="label">Terminadas</div><div class="val" id="te-terminadas">—</div></div>
-      <div class="kpi"><div class="label">Críticas</div><div class="val" style="color:var(--bad)" id="te-criticas">—</div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="label">En taller</div><div class="val" id="kpi-entaller">—</div></div>
+      <div class="kpi"><div class="label">Trabajando</div><div class="val" id="kpi-trabajando">—</div></div>
+      <div class="kpi"><div class="label">Terminadas</div><div class="val" id="kpi-terminadas">—</div></div>
+      <div class="kpi bad"><div class="label">Críticas</div><div class="val" id="kpi-criticas">—</div></div>
     </div>
 
     <h2>Carga por técnico</h2>
-    <div id="te-cargaTecnico" style="margin-bottom:22px">
+    <div class="box" id="carga-tecnico" style="margin-bottom:22px">
       <div class="loading">Cargando…</div>
     </div>
 
-    <h2>Inconsistencias</h2>
-    <div id="te-inconsistencias" style="margin-bottom:10px">
-      <div class="loading">Cargando…</div>
-    </div>
-    <div class="foot-note" id="te-nota" style="margin-bottom:20px">Actualiza cada hora.</div>
-
-    <div id="fuente-toggle" style="display:none;margin-bottom:22px">
-      <div class="fuente-toggle">
-        <button type="button" id="btn-fuente-mk" class="fuente-btn active" onclick="mostrarFuente('mk')">Motokontrol</button>
-        <button type="button" id="btn-fuente-at" class="fuente-btn" onclick="mostrarFuente('airtable')">Airtable</button>
+    <h2>¿Dónde se atasca?</h2>
+    <div class="box" style="margin-bottom:28px">
+      <div class="cuello-nota">
+        <strong>Datos disponibles pronto.</strong> El tiempo promedio por estado (cuánto tarda una moto en
+        pasar de pendiente a en atención, y de ahí a atendida) se calculará una vez el historial de
+        estados acumule suficientes datos.
       </div>
     </div>
 
-    <div id="airtable-section">
-      <div class="kpis">
-        <div class="kpi"><div class="label">Motos atendidas</div><div class="val" id="k-total">—</div></div>
-        <div class="kpi"><div class="label">Entregas a tiempo</div><div class="val" id="k-ontime">—</div></div>
-        <div class="kpi"><div class="label">Retrasos</div><div class="val warn" id="k-delay">—</div></div>
-        <div class="kpi"><div class="label">En taller ahora</div><div class="val" id="k-now">—</div></div>
-        <div class="kpi"><div class="label">Reingresos</div><div class="val warn" id="k-reingresos">—</div></div>
+    <h2>Órdenes en taller</h2>
+    <div class="filtros">
+      <div class="filtro-campo">
+        <label for="filtro-tecnico">Técnico</label>
+        <select id="filtro-tecnico"><option value="">Todos</option></select>
       </div>
+      <div class="filtro-campo">
+        <label for="filtro-desde">Ingreso desde</label>
+        <input type="date" id="filtro-desde">
+      </div>
+      <div class="filtro-campo">
+        <label for="filtro-hasta">Ingreso hasta</label>
+        <input type="date" id="filtro-hasta">
+      </div>
+      <button type="button" class="btn-exportar" id="btn-exportar">Exportar CSV</button>
+    </div>
 
-      <h2>Por técnico</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Técnico</th>
-            <th class="num">Atendidas</th>
-            <th class="num">A tiempo</th>
-            <th class="num">Retrasos</th>
-            <th>Cumplimiento</th>
-            <th class="num">En taller ahora</th>
-            <th class="num">Reingresos</th>
-          </tr>
-        </thead>
-        <tbody id="rows">
-          <tr><td colspan="7" class="loading">Cargando…</td></tr>
-        </tbody>
-      </table>
-      <div class="foot-note">Una moto está "en taller ahora" si tiene ingreso pero aún no tiene salida registrada.</div>
+    <div class="tabla-wrap">
+      <div class="tabla-scroll">
+        <table id="tabla-ordenes">
+          <thead>
+            <tr id="tabla-head">
+              <th>Placa</th>
+              <th>Técnico</th>
+              <th>Estado</th>
+              <th>Servicio</th>
+              <th class="dias">Días</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr><td colspan="5" class="loading">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
 <script>
 const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
-const TECNICOS = ["Nelson Jaime","Eduin Yesid","Harold","William Camilo","John Edinson"];
 
-/* Guard de sesion: solo admin y manager */
+/* Guard de sesion: admin, manager, developer */
 const session = guard(["admin","manager","developer"]);
 const logoutBtn = document.getElementById("logout");
 if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
 
-function mostrarFuente(cual){
-  const seccionAirtable = document.getElementById("airtable-section");
-  const btnMk = document.getElementById("btn-fuente-mk");
-  const btnAt = document.getElementById("btn-fuente-at");
-  if(!seccionAirtable) return;
-  if(cual === "airtable"){
-    seccionAirtable.style.display = "block";
-    if(btnMk) btnMk.classList.remove("active");
-    if(btnAt) btnAt.classList.add("active");
-  }else{
-    seccionAirtable.style.display = "none";
-    if(btnMk) btnMk.classList.add("active");
-    if(btnAt) btnAt.classList.remove("active");
-  }
+/* Plata: admin no la ve. Manager y developer sí. */
+const puedeVerPlata = session && session.rol !== "admin";
+if(puedeVerPlata){
+  document.getElementById("tabla-head").insertAdjacentHTML("beforeend", '<th class="valor">Valor</th>');
 }
 
-(function aplicarVisibilidadFuente(){
-  const rol = session && session.rol;
-  const toggle = document.getElementById("fuente-toggle");
-  if(rol === "developer"){
-    if(toggle) toggle.style.display = "block";
-    mostrarFuente("mk");
-  }else{
-    if(toggle) toggle.style.display = "none";
-    mostrarFuente("mk");
-  }
-})();
-
-async function cargar(){
-  try{
-    const res = await authFetch(API + "/dashboard");
-    const data = await res.json();
-    const ingresos = (data.ingreso && data.ingreso.records) || [];
-    const salidas  = (data.salida  && data.salida.records)  || [];
-
-    // agrega por tecnico
-    const stats = {};
-    TECNICOS.forEach(t => stats[t] = { atendidas:0, ontime:0, retrasos:0, ahora:0, reingresos:0 });
-
-    // salidas = motos atendidas (usa el lookup Tecnico (de ingreso))
-    salidas.forEach(r => {
-      const f = r.fields || {};
-      let t = f["Técnico (de ingreso)"];
-      if(Array.isArray(t)) t = t[0];
-      if(!stats[t]) return;
-      stats[t].atendidas++;
-      if(f["Entrega"] === "Retrasada") stats[t].retrasos++;
-      else if(f["Entrega"] === "A tiempo") stats[t].ontime++;
-    });
-
-    // en taller ahora = ingresos sin salida vinculada; reingresos = flag Reingreso en INGRESO
-    ingresos.forEach(r => {
-      const f = r.fields || {};
-      const tieneSalida = Array.isArray(f["SALIDA"]) && f["SALIDA"].length > 0;
-      const t = f["Técnico asignado"];
-      if(!stats[t]) return;
-      if(!tieneSalida) stats[t].ahora++;
-      if(f["Re-ingreso"] === true) stats[t].reingresos++;
-    });
-
-    // totales
-    let T={atendidas:0,ontime:0,retrasos:0,ahora:0,reingresos:0};
-    TECNICOS.forEach(t=>{ const s=stats[t]; T.atendidas+=s.atendidas; T.ontime+=s.ontime; T.retrasos+=s.retrasos; T.ahora+=s.ahora; T.reingresos+=s.reingresos; });
-    document.getElementById("k-total").textContent  = T.atendidas;
-    document.getElementById("k-ontime").textContent = T.ontime;
-    document.getElementById("k-delay").textContent  = T.retrasos;
-    document.getElementById("k-now").textContent    = T.ahora;
-    document.getElementById("k-reingresos").textContent = T.reingresos;
-
-    // filas ordenadas por atendidas desc
-    const filas = TECNICOS.map(t => ({nombre:t, ...stats[t]}))
-      .sort((a,b)=> b.atendidas - a.atendidas);
-
-    document.getElementById("rows").innerHTML = filas.map(s => {
-      const cerradas = s.ontime + s.retrasos;
-      const pct = cerradas ? Math.round(s.ontime/cerradas*100) : 0;
-      const pctTxt = cerradas ? pct + "%" : "—";
-      const delayClass = s.retrasos === 0 ? "ok" : (s.retrasos <= 1 ? "warn" : "bad");
-      const reingresoClass = s.reingresos === 0 ? "ok" : "bad";
-      return '<tr>' +
-        '<td class="nombre">' + s.nombre + '</td>' +
-        '<td class="num">' + s.atendidas + '</td>' +
-        '<td class="num">' + s.ontime + '</td>' +
-        '<td class="num"><span class="pill ' + delayClass + '">' + s.retrasos + '</span></td>' +
-        '<td>' + pctTxt + '<div class="pct-bar"><i style="width:' + pct + '%"></i></div></td>' +
-        '<td class="num">' + (s.ahora || '—') + '</td>' +
-        '<td class="num"><span class="pill ' + reingresoClass + '">' + s.reingresos + '</span></td>' +
-      '</tr>';
-    }).join("");
-
-  }catch(e){
-    document.getElementById("rows").innerHTML =
-      '<tr><td colspan="7" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
-  }
+/* Formato de plata colombiano: 1407795 -> $1.407.795 */
+function fmtPesos(n){
+  return "$" + new Intl.NumberFormat("es-CO").format(Math.round(Number(n) || 0));
 }
-cargar();
+
+const ESTADO_INFO = {
+  "Pendiente":   { clase: "pend",  label: "Pendiente" },
+  "En Atención": { clase: "trab",  label: "En trabajo" },
+  "Atendido":    { clase: "listo", label: "Lista" },
+};
+
+let todasOrdenes = [];
 
 function renderCargaTecnico(porTecnico){
-  const cont = document.getElementById("te-cargaTecnico");
+  const cont = document.getElementById("carga-tecnico");
   if(!porTecnico || !porTecnico.length){
     cont.innerHTML = '<div class="empty">Sin datos</div>';
     return;
   }
-  const maxTotal = Math.max(1, ...porTecnico.map(t => (t.activas||0) + (t.terminadas||0)));
-  cont.innerHTML = porTecnico.map(t => {
+  const ordenado = porTecnico.slice().sort((a,b) => (b.activas||0) - (a.activas||0));
+  const maxTotal = Math.max(1, ...ordenado.map(t => (t.activas||0) + (t.terminadas||0)));
+  cont.innerHTML = ordenado.map(t => {
+    const esAlerta = t.tecnico === "Tecnico De";
     const pctActivas = Math.round(((t.activas||0) / maxTotal) * 100);
     const pctTerminadas = Math.round(((t.terminadas||0) / maxTotal) * 100);
-    return '<div style="margin-bottom:12px">' +
-      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">' +
-        '<span style="font-weight:600">' + (t.tecnico || "—") + '</span>' +
-        '<span style="color:var(--muted);font-family:var(--mono)">' + (t.activas||0) + '·' + (t.terminadas||0) + '</span>' +
-      '</div>' +
-      '<div class="pct-bar" style="display:flex;overflow:hidden">' +
-        '<i style="width:' + pctActivas + '%;background:var(--warn)"></i>' +
-        '<i style="width:' + pctTerminadas + '%;background:var(--ok)"></i>' +
-      '</div>' +
-    '</div>';
+    return (
+      '<div class="carga-row' + (esAlerta ? ' alerta' : '') + '">' +
+        '<div class="carga-head">' +
+          '<span class="nombre' + (esAlerta ? ' alerta' : '') + '">' + (t.tecnico || "Sin técnico") + '</span>' +
+          '<span class="nums">' + (t.activas||0) + '·' + (t.terminadas||0) + '</span>' +
+        '</div>' +
+        '<div class="carga-bar">' +
+          '<i class="activas" style="width:' + pctActivas + '%"></i>' +
+          '<i class="terminadas" style="width:' + pctTerminadas + '%"></i>' +
+        '</div>' +
+      '</div>'
+    );
   }).join("");
 }
 
-function renderInconsistencias(lista){
-  const cont = document.getElementById("te-inconsistencias");
-  if(!lista || !lista.length){
-    cont.innerHTML = '<div class="empty">Sin inconsistencias</div>';
+/* fecha_ingreso viene de ordenes_mk (ej. "2026-08-30T00:00:00.000Z" o
+   "2026-08-30"); nos quedamos con los primeros 10 caracteres (YYYY-MM-DD)
+   y parseamos a medianoche local para comparar por día contra los inputs
+   date del filtro. */
+function fechaIngresoReal(fechaIngreso){
+  if(!fechaIngreso) return null;
+  const d = new Date(String(fechaIngreso).slice(0, 10) + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function parseFechaInput(valor){
+  if(!valor) return null;
+  const d = new Date(valor + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function filtrarYOrdenar(){
+  const tecnicoSel = document.getElementById("filtro-tecnico").value;
+  const desde = parseFechaInput(document.getElementById("filtro-desde").value);
+  const hasta = parseFechaInput(document.getElementById("filtro-hasta").value);
+
+  return todasOrdenes
+    .filter(o => !tecnicoSel || o.tecnico === tecnicoSel)
+    .filter(o => {
+      if(!desde && !hasta) return true;
+      const fecha = fechaIngresoReal(o.fecha_ingreso);
+      if(!fecha) return false;
+      if(desde && fecha < desde) return false;
+      if(hasta && fecha > hasta) return false;
+      return true;
+    })
+    .slice()
+    .sort((a,b) => (b.dias_en_taller ?? -1) - (a.dias_en_taller ?? -1));
+}
+
+function filaTabla(o){
+  const info = ESTADO_INFO[o.estado] || { clase: "pend", label: o.estado || "—" };
+  const dias = (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "—" : o.dias_en_taller;
+  return (
+    '<tr>' +
+      '<td class="placa">' + (o.placa || "—") + '</td>' +
+      '<td>' + (o.tecnico || "—") + '</td>' +
+      '<td><span class="estado-pill ' + info.clase + '">' + info.label + '</span></td>' +
+      '<td>' + (o.servicio || "Sin descripción") + '</td>' +
+      '<td class="dias">' + dias + '</td>' +
+      (puedeVerPlata ? '<td class="valor">' + fmtPesos(o.total) + '</td>' : '') +
+    '</tr>'
+  );
+}
+
+function renderTabla(){
+  const filas = filtrarYOrdenar();
+  const cuerpo = document.getElementById("tabla-body");
+  const colspan = puedeVerPlata ? 6 : 5;
+  if(filas.length === 0){
+    cuerpo.innerHTML = '<tr><td colspan="' + colspan + '" class="empty">Sin órdenes que coincidan con el filtro.</td></tr>';
     return;
   }
-  cont.innerHTML = lista.map(i => {
-    const esCritica = i.severidad === "critica";
-    return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;' +
-      'padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px">' +
-      '<div>' +
-        '<div style="font-weight:600;font-family:var(--mono)">' + (i.placa || "—") + ' · ' + (i.tecnico || "—") + '</div>' +
-        '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + (i.nota || "") + '</div>' +
-      '</div>' +
-      '<span class="pill ' + (esCritica ? "bad" : "warn") + '">' + (esCritica ? "Crítica" : "Revisar") + '</span>' +
-    '</div>';
-  }).join("");
+  cuerpo.innerHTML = filas.map(filaTabla).join("");
 }
+
+function poblarFiltroTecnico(){
+  const select = document.getElementById("filtro-tecnico");
+  const actual = select.value;
+  const tecnicos = Array.from(new Set(todasOrdenes.map(o => o.tecnico).filter(Boolean))).sort();
+  select.innerHTML = '<option value="">Todos</option>' +
+    tecnicos.map(t => '<option value="' + t + '">' + t + '</option>').join("");
+  if(tecnicos.includes(actual)) select.value = actual;
+}
+
+/* CSV de la tabla ya filtrada/ordenada, respetando si la columna Valor
+   está visible (admin no la exporta tampoco). */
+function celdaCSV(valor){
+  const s = String(valor == null ? "" : valor);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function exportarCSV(){
+  const filas = filtrarYOrdenar();
+  const encabezados = ["Placa","Técnico","Estado","Servicio","Días"];
+  if(puedeVerPlata) encabezados.push("Valor");
+
+  const lineas = [encabezados.map(celdaCSV).join(",")];
+  filas.forEach(o => {
+    const info = ESTADO_INFO[o.estado] || { label: o.estado || "—" };
+    const fila = [
+      o.placa || "",
+      o.tecnico || "",
+      info.label,
+      o.servicio || "",
+      (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "" : o.dias_en_taller,
+    ];
+    if(puedeVerPlata) fila.push(o.total ?? "");
+    lineas.push(fila.map(celdaCSV).join(","));
+  });
+
+  const csv = "﻿" + lineas.join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ordenes-taller-" + new Date().toISOString().slice(0,10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("filtro-tecnico").addEventListener("change", renderTabla);
+document.getElementById("filtro-desde").addEventListener("change", renderTabla);
+document.getElementById("filtro-hasta").addEventListener("change", renderTabla);
+document.getElementById("btn-exportar").addEventListener("click", exportarCSV);
 
 async function cargarTallerEstado(){
   try{
@@ -273,22 +338,25 @@ async function cargarTallerEstado(){
     const data = await res.json();
     const r = data.resumen || {};
 
-    document.getElementById("te-enTaller").textContent = r.en_taller ?? "—";
-    document.getElementById("te-trabajando").textContent = r.trabajando ?? "—";
-    document.getElementById("te-terminadas").textContent = r.terminadas ?? "—";
-    document.getElementById("te-criticas").textContent = data.criticas ?? 0;
+    document.getElementById("kpi-entaller").textContent = r.en_taller ?? "—";
+    document.getElementById("kpi-trabajando").textContent = r.trabajando ?? "—";
+    document.getElementById("kpi-terminadas").textContent = r.terminadas ?? "—";
+    document.getElementById("kpi-criticas").textContent = data.criticas ?? 0;
 
     renderCargaTecnico(data.por_tecnico || []);
-    renderInconsistencias(data.inconsistencias || []);
-    document.getElementById("te-nota").textContent = "Actualiza cada hora.";
+
+    todasOrdenes = data.todas_ordenes || [];
+    poblarFiltroTecnico();
+    renderTabla();
   }catch(e){
-    document.getElementById("te-enTaller").textContent = "—";
-    document.getElementById("te-trabajando").textContent = "—";
-    document.getElementById("te-terminadas").textContent = "—";
-    document.getElementById("te-criticas").textContent = "—";
-    document.getElementById("te-cargaTecnico").innerHTML = '<div class="empty">No se pudo cargar</div>';
-    document.getElementById("te-inconsistencias").innerHTML = "";
-    document.getElementById("te-nota").textContent = "No se pudo cargar el estado del taller.";
+    document.getElementById("kpi-entaller").textContent = "—";
+    document.getElementById("kpi-trabajando").textContent = "—";
+    document.getElementById("kpi-terminadas").textContent = "—";
+    document.getElementById("kpi-criticas").textContent = "—";
+    document.getElementById("carga-tecnico").innerHTML = '<div class="empty">No se pudo cargar.</div>';
+    const colspan = puedeVerPlata ? 6 : 5;
+    document.getElementById("tabla-body").innerHTML =
+      '<tr><td colspan="' + colspan + '" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
   }
 }
 cargarTallerEstado();
