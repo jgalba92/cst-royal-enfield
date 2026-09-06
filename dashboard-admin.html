@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
 <script src="page-info.js?v=1"></script>
+<script src="sidebar.js?v=1"></script>
 <title>CST · Rendimiento del equipo</title>
 <style>
   :root{
@@ -18,6 +19,9 @@
   html,body{overflow-x:hidden;}
   body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;}
   .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 60px;min-width:0;}
+  /* Reserva espacio para el rail del sidebar (sidebar.js) en desktop; en
+     móvil el sidebar es un menú hamburguesa off-canvas, no ocupa espacio. */
+  @media (min-width:769px){ body.cst-has-sidebar .wrap{padding-left:78px;} }
 
   .top{display:flex;justify-content:space-between;align-items:center;
     padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap;gap:10px;}
@@ -176,10 +180,11 @@
               <th>Estado</th>
               <th>Servicio</th>
               <th class="dias">Días</th>
+              <th class="valor">Valor</th>
             </tr>
           </thead>
           <tbody id="tabla-body">
-            <tr><td colspan="5" class="loading">Cargando…</td></tr>
+            <tr><td colspan="6" class="loading">Cargando…</td></tr>
           </tbody>
         </table>
       </div>
@@ -193,12 +198,6 @@ const API = "https://cst-royal-enfield-api.juanguillermoalba.workers.dev";
 const session = guard(["admin","manager","developer"]);
 const logoutBtn = document.getElementById("logout");
 if(logoutBtn){ logoutBtn.addEventListener("click", logout); }
-
-/* Plata: admin no la ve. Manager y developer sí. */
-const puedeVerPlata = session && session.rol !== "admin";
-if(puedeVerPlata){
-  document.getElementById("tabla-head").insertAdjacentHTML("beforeend", '<th class="valor">Valor</th>');
-}
 
 /* Formato de plata colombiano: 1407795 -> $1.407.795 */
 function fmtPesos(n){
@@ -297,7 +296,7 @@ function filaTabla(o){
       '<td><span class="estado-pill ' + info.clase + '">' + info.label + '</span></td>' +
       '<td>' + (o.servicio || "Sin descripción") + '</td>' +
       '<td class="dias">' + dias + '</td>' +
-      (puedeVerPlata ? '<td class="valor">' + fmtPesos(o.total) + '</td>' : '') +
+      '<td class="valor">' + fmtPesos(o.total) + '</td>' +
     '</tr>'
   );
 }
@@ -313,7 +312,7 @@ function renderTabla(){
   const filas = filtrarYOrdenar();
   actualizarContador(filas.length);
   const cuerpo = document.getElementById("tabla-body");
-  const colspan = puedeVerPlata ? 6 : 5;
+  const colspan = 6;
   if(filas.length === 0){
     cuerpo.innerHTML = '<tr><td colspan="' + colspan + '" class="empty">Sin órdenes que coincidan con el filtro.</td></tr>';
     return;
@@ -330,8 +329,7 @@ function poblarFiltroTecnico(){
   if(tecnicos.includes(actual)) select.value = actual;
 }
 
-/* CSV de la tabla ya filtrada/ordenada, respetando si la columna Valor
-   está visible (admin no la exporta tampoco). */
+/* CSV de la tabla ya filtrada/ordenada. */
 function celdaCSV(valor){
   const s = String(valor == null ? "" : valor);
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
@@ -339,8 +337,7 @@ function celdaCSV(valor){
 
 function exportarCSV(){
   const filas = filtrarYOrdenar();
-  const encabezados = ["Placa","Técnico","Estado","Servicio","Días"];
-  if(puedeVerPlata) encabezados.push("Valor");
+  const encabezados = ["Placa","Técnico","Estado","Servicio","Días","Valor"];
 
   const lineas = [encabezados.map(celdaCSV).join(",")];
   filas.forEach(o => {
@@ -351,8 +348,8 @@ function exportarCSV(){
       info.label,
       o.servicio || "",
       (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "" : o.dias_en_taller,
+      o.total ?? "",
     ];
-    if(puedeVerPlata) fila.push(o.total ?? "");
     lineas.push(fila.map(celdaCSV).join(","));
   });
 
@@ -398,7 +395,7 @@ async function cargarTallerEstado(){
     document.getElementById("kpi-criticas").textContent = "—";
     document.getElementById("carga-tecnico").innerHTML = '<div class="empty">No se pudo cargar.</div>';
     document.getElementById("contador-filtro").textContent = "";
-    const colspan = puedeVerPlata ? 6 : 5;
+    const colspan = 6;
     document.getElementById("tabla-body").innerHTML =
       '<tr><td colspan="' + colspan + '" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
   }

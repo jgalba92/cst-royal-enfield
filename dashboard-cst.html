@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
 <script src="page-info.js?v=1"></script>
+<script src="sidebar.js?v=1"></script>
 <script>
-/* Guard de rol: solo manager */
-var cstSession = guard(["manager","developer"]);
+/* Guard de rol: admin, manager, developer */
+var cstSession = guard(["admin","manager","developer"]);
 </script>
 <title>Dashboard — CST Royal Enfield</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -42,6 +43,9 @@ var cstSession = guard(["manager","developer"]);
     min-height: 100vh;
     padding: 24px 16px 60px;
   }
+  /* Reserva espacio para el rail del sidebar (sidebar.js) en desktop; en
+     móvil el sidebar es un menú hamburguesa off-canvas, no ocupa espacio. */
+  @media (min-width: 769px) { body.cst-has-sidebar { padding-left: 76px; } }
 
   .container { max-width: 1200px; margin: 0 auto; min-width: 0; }
 
@@ -336,6 +340,7 @@ var cstSession = guard(["manager","developer"]);
     gap: 12px;
     margin-bottom: 20px;
   }
+  .mg-charts-grid canvas { display: block; height: 200px !important; max-height: 200px; }
 
   .mg-quality-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
   .mg-quality-donut { position: relative; width: 190px; height: 190px; flex-shrink: 0; margin: 0 auto; }
@@ -507,6 +512,18 @@ var cstSession = guard(["manager","developer"]);
         <div class="mg-quality-wrap" id="mg-calidadDatos">
           <div class="loading">Cargando…</div>
         </div>
+      </div>
+    </div>
+
+    <div class="mg-charts-grid">
+      <div class="card">
+        <div class="section-title">Motos por técnico</div>
+        <canvas id="chartMotosTecnico" height="200"></canvas>
+      </div>
+      <div class="card" id="mg-valorPorDia-card">
+        <div class="section-title">Valor por día</div>
+        <canvas id="chartValorPorDia" height="200"></canvas>
+        <div class="mg-note" style="margin:8px 0 0">Valores &gt;20M excluidos, valor real pendiente de Siigo.</div>
       </div>
     </div>
 
@@ -1146,6 +1163,71 @@ var cstSession = guard(["manager","developer"]);
     });
   }
 
+  /* Barras con el total de motos (activas + terminadas) por técnico,
+     de mayor a menor. Estilo dorado, igual que las otras barras nuevas. */
+  function renderMotosPorTecnico(porTecnico){
+    const ordenado = (porTecnico || [])
+      .map(t => ({ tecnico: t.tecnico || 'Sin técnico', total: (t.activas || 0) + (t.terminadas || 0) }))
+      .sort((a, b) => b.total - a.total);
+
+    destroyChart('motosTecnico');
+    chartInstances.motosTecnico = new Chart(document.getElementById('chartMotosTecnico'), {
+      type: 'bar',
+      data: {
+        labels: ordenado.map(o => o.tecnico),
+        datasets: [{ data: ordenado.map(o => o.total), backgroundColor: '#C9A84C', borderRadius: 6 }],
+      },
+      options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: true },
+    });
+  }
+
+  /* Barras con el total facturado por día (manager.valor_por_dia), ya
+     excluye >20M y ceros desde el Worker. Etiquetas y tooltips en pesos
+     colombianos con fmtPesos. */
+  function renderValorPorDia(lista){
+    lista = lista || [];
+    const dias = lista.map(d => d.dia || '');
+    const valores = lista.map(d => d.total || 0);
+    // Si son muchos días, muestra solo 1 de cada 5 en el eje X para no saturar.
+    const labelsFiltrados = dias.length > 15
+      ? dias.map((l, i) => i % 5 === 0 ? l.slice(5) : '')
+      : dias.map(l => l.slice(5));
+
+    destroyChart('valorPorDia');
+    chartInstances.valorPorDia = new Chart(document.getElementById('chartValorPorDia'), {
+      type: 'bar',
+      data: {
+        labels: labelsFiltrados,
+        datasets: [{
+          data: valores,
+          backgroundColor: 'rgba(201,168,76,0.5)',
+          borderColor: '#C9A84C',
+          borderWidth: 1,
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        ...CHART_DEFAULTS,
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          tooltip: {
+            ...CHART_DEFAULTS.plugins.tooltip,
+            callbacks: { label: ctx => fmtPesos(ctx.parsed.y) },
+          },
+        },
+        scales: {
+          ...CHART_DEFAULTS.scales,
+          y: {
+            ...CHART_DEFAULTS.scales.y,
+            ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => fmtPesos(v) },
+          },
+        },
+      },
+    });
+  }
+
   function renderUltimasSalidas(lista){
     const tbody = document.getElementById('mg-ultimasSalidas');
     if(!lista || !lista.length){
@@ -1192,6 +1274,8 @@ var cstSession = guard(["manager","developer"]);
 
       renderServiciosFrecuentes(mg.servicios_frecuentes || []);
       renderCalidadDatos(mg.calidad_datos || {}, data.criticas, data.revisar);
+      renderMotosPorTecnico(data.por_tecnico || []);
+      renderValorPorDia(mg.valor_por_dia || []);
       renderUltimasSalidas(mg.ultimas_salidas || []);
       renderListasEntrega(data.listas_entrega || []);
 

@@ -208,7 +208,13 @@ function mostrarError(el, msg){
 function ocultarError(el){ el.classList.remove("show"); }
 
 function redirigir(rol){
-  window.location.href = (rol === "tecnico") ? "dashboard-tecnico.html" : "index.html";
+  var rutas = {
+    tecnico: "dashboard-tecnico.html",
+    admin: "dashboard-admin.html",
+    manager: "dashboard-cst.html",
+  };
+  // developer y vendedor siguen yendo al menú (index.html), como antes.
+  window.location.href = rutas[rol] || "index.html";
 }
 
 function volverALogin(){
