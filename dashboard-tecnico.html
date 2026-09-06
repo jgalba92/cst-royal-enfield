@@ -17,6 +17,11 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;}
   .wrap{max-width:640px;margin:0 auto;padding:18px 14px 60px;}
+  @media (min-width:769px){
+    .wrap{max-width:1100px;}
+    .grupos{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start;}
+    section.grupo{margin-bottom:0;}
+  }
 
   .top{display:flex;justify-content:space-between;align-items:center;
     padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:18px;gap:10px;}
@@ -47,6 +52,18 @@
 
   .alerta{display:none;margin:0 0 16px;padding:11px 14px;background:rgba(200,16,46,.14);
     border:1px solid var(--accent);border-radius:var(--radius);color:#ff8b98;font-size:13px;font-weight:600;}
+  .alerta.info{background:var(--panel-2);border-color:var(--line);color:var(--muted);font-weight:400;}
+  .alerta-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .alerta-toggle{background:none;border:1px solid currentColor;color:inherit;border-radius:6px;
+    padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:var(--sans);}
+  .alerta-toggle:hover{background:rgba(255,255,255,.1);}
+  .alerta-list{display:none;margin-top:10px;flex-direction:column;gap:6px;}
+  .alerta-list.show{display:flex;}
+  .alerta-item{background:rgba(0,0,0,.18);border-radius:7px;padding:8px 10px;font-size:12.5px;
+    color:var(--ink);font-weight:500;border-left:3px solid var(--line);}
+  .alerta-item .placa{font-family:var(--mono);font-weight:700;margin-right:6px;color:var(--ink);}
+  .alerta-item.critica{border-left-color:var(--bad);}
+  .alerta-item.revisar{border-left-color:var(--accent-ink);}
   .refresh-note{font-size:11px;color:var(--muted);margin:-8px 0 18px;}
 
   section.grupo{margin-bottom:20px;}
@@ -60,18 +77,26 @@
   .grupo-nota{font-size:12px;color:var(--accent-ink);margin:-4px 0 10px;font-weight:600;}
 
   .moto-list{display:flex;flex-direction:column;gap:7px;}
-  .moto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:11px 13px;}
+  .moto-row{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:11px 13px;
+    transition:border-color .15s,background .15s;}
+  .moto-row:hover{border-color:#555;}
   .moto-row.oldest{border-color:var(--accent-ink);background:rgba(201,168,76,.08);}
+  .moto-row.expanded{align-items:flex-start;}
   .moto-main{min-width:0;flex:1;}
   .moto-placa-row{display:flex;align-items:center;gap:6px;}
   .moto-placa{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.02em;}
   .moto-star{font-size:11px;color:var(--accent-ink);}
   .moto-serv{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;
     white-space:nowrap;}
+  .moto-row.expanded .moto-serv{white-space:normal;overflow:visible;text-overflow:clip;}
+  .moto-detail{display:none;font-size:11.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
+  .moto-row.expanded .moto-detail{display:block;}
   .moto-dias{text-align:right;flex-shrink:0;}
   .moto-dias .num{font-family:var(--mono);font-size:17px;font-weight:700;}
   .moto-dias .lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .moto-chevron{color:var(--muted);font-size:16px;flex-shrink:0;transition:transform .15s,color .15s;}
+  .moto-row.expanded .moto-chevron{transform:rotate(90deg);color:var(--accent-ink);}
 
   .empty,.loading{padding:16px;text-align:center;color:var(--muted);font-size:13px;
     background:var(--panel);border:1px solid var(--line);border-radius:9px;}
@@ -106,36 +131,44 @@
       </div>
     </div>
 
-    <div class="alerta" id="te-alerta"></div>
+    <div class="alerta" id="te-alerta">
+      <div class="alerta-head">
+        <span id="alerta-msg"></span>
+        <button type="button" class="alerta-toggle" id="alerta-toggle" aria-expanded="false">Ver detalle ▾</button>
+      </div>
+      <div class="alerta-list" id="alerta-list"></div>
+    </div>
     <div class="refresh-note">Actualiza cada hora.</div>
 
-    <section class="grupo">
-      <div class="grupo-head">
-        <span class="grupo-dot pend"></span>
-        <h2>Por empezar</h2>
-        <span class="cnt" id="sec-pendiente-cnt"></span>
-      </div>
-      <div class="moto-list" id="sec-pendiente"><div class="loading">Cargando…</div></div>
-    </section>
+    <div class="grupos">
+      <section class="grupo">
+        <div class="grupo-head">
+          <span class="grupo-dot pend"></span>
+          <h2>Por empezar</h2>
+          <span class="cnt" id="sec-pendiente-cnt"></span>
+        </div>
+        <div class="moto-list" id="sec-pendiente"><div class="loading">Cargando…</div></div>
+      </section>
 
-    <section class="grupo">
-      <div class="grupo-head">
-        <span class="grupo-dot trab"></span>
-        <h2>En trabajo</h2>
-        <span class="cnt" id="sec-trabajo-cnt"></span>
-      </div>
-      <div class="moto-list" id="sec-trabajo"><div class="loading">Cargando…</div></div>
-    </section>
+      <section class="grupo">
+        <div class="grupo-head">
+          <span class="grupo-dot trab"></span>
+          <h2>En trabajo</h2>
+          <span class="cnt" id="sec-trabajo-cnt"></span>
+        </div>
+        <div class="moto-list" id="sec-trabajo"><div class="loading">Cargando…</div></div>
+      </section>
 
-    <section class="grupo">
-      <div class="grupo-head">
-        <span class="grupo-dot listo"></span>
-        <h2>Listas para entregar</h2>
-        <span class="cnt" id="sec-listas-cnt"></span>
-      </div>
-      <div class="grupo-nota">Avisa al cliente.</div>
-      <div class="moto-list" id="sec-listas"><div class="loading">Cargando…</div></div>
-    </section>
+      <section class="grupo">
+        <div class="grupo-head">
+          <span class="grupo-dot listo"></span>
+          <h2>Listas para entregar</h2>
+          <span class="cnt" id="sec-listas-cnt"></span>
+        </div>
+        <div class="grupo-nota">Avisa al cliente.</div>
+        <div class="moto-list" id="sec-listas"><div class="loading">Cargando…</div></div>
+      </section>
+    </div>
   </div>
 
 <script>
@@ -159,11 +192,42 @@ function filaMoto(m, esLaMasVieja){
           (esLaMasVieja ? '<span class="moto-star">★ más antigua</span>' : '') +
         '</div>' +
         '<div class="moto-serv">' + (m.servicio || "Sin descripción") + '</div>' +
+        '<div class="moto-detail">Orden #' + (m.consecutivo || "—") + ' · Estado: ' + (m.estado || "—") + '</div>' +
       '</div>' +
       '<div class="moto-dias">' +
         '<div class="num">' + dias + '</div>' +
         '<div class="lbl">días</div>' +
       '</div>' +
+      '<span class="moto-chevron">›</span>' +
+    '</div>'
+  );
+}
+
+/* Click en una moto expande/colapsa el servicio completo y su detalle.
+   Delegado en document (se registra una sola vez, fuera de renderGrupo
+   y de cargarTallerEstado): sigue funcionando aunque renderGrupo
+   reescriba el innerHTML de .moto-list en cada refresco. */
+document.addEventListener("click", e => {
+  const row = e.target.closest(".moto-row");
+  if(row) row.classList.toggle("expanded");
+});
+
+/* Alerta de inconsistencias: el botón solo abre/cierra la lista ya
+   pintada por cargarTallerEstado(). */
+const alertaToggle = document.getElementById("alerta-toggle");
+const alertaListEl  = document.getElementById("alerta-list");
+alertaToggle.addEventListener("click", () => {
+  const abierta = alertaListEl.classList.toggle("show");
+  alertaToggle.setAttribute("aria-expanded", abierta ? "true" : "false");
+  alertaToggle.textContent = abierta ? "Ocultar detalle ▴" : "Ver detalle ▾";
+});
+
+function filaInconsistencia(it){
+  const sev = it.severidad === "critica" ? "critica" : "revisar";
+  return (
+    '<div class="alerta-item ' + sev + '">' +
+      '<span class="placa">' + (it.placa || "—") + '</span>' +
+      (it.nota || "Revisar en Motokontrol.") +
     '</div>'
   );
 }
@@ -216,12 +280,18 @@ async function cargarTallerEstado(){
 
     const inconsistencias = data.inconsistencias || [];
     const alerta = document.getElementById("te-alerta");
+    alerta.classList.remove("info");
+    alertaToggle.style.display = "";
     if(inconsistencias.length > 0){
-      alerta.textContent = inconsistencias.length +
+      document.getElementById("alerta-msg").textContent = inconsistencias.length +
         (inconsistencias.length === 1 ? " moto tuya para revisar en Motokontrol." : " motos tuyas para revisar en Motokontrol.");
+      document.getElementById("alerta-list").innerHTML = inconsistencias.map(filaInconsistencia).join("");
       alerta.style.display = "block";
     }else{
       alerta.style.display = "none";
+      alertaListEl.classList.remove("show");
+      alertaToggle.setAttribute("aria-expanded", "false");
+      alertaToggle.textContent = "Ver detalle ▾";
     }
   }catch(e){
     document.getElementById("cnt-pendiente").textContent = "—";
@@ -232,8 +302,12 @@ async function cargarTallerEstado(){
       document.getElementById(id).innerHTML = '<div class="empty">No se pudo cargar el estado del taller.</div>';
     });
     const alerta = document.getElementById("te-alerta");
-    alerta.textContent = "No se pudo conectar con el servidor. Reintenta.";
-    alerta.style.cssText = "display:block;margin:0 0 16px;padding:11px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--muted);font-size:13px;";
+    document.getElementById("alerta-msg").textContent = "No se pudo conectar con el servidor. Reintenta.";
+    document.getElementById("alerta-list").innerHTML = "";
+    alertaListEl.classList.remove("show");
+    alertaToggle.style.display = "none";
+    alerta.classList.add("info");
+    alerta.style.display = "block";
   }
 }
 cargarTallerEstado();
