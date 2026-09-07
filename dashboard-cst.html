@@ -383,6 +383,49 @@ var cstSession = guard(["admin","manager","developer"]);
 
   .mg-table-scroll { max-height: 340px; overflow-y: auto; overflow-x: hidden; }
 
+  /* Aviso flotante de reingresos por revisar */
+  .toast-reingresos {
+    position: fixed; top: 18px; right: 18px; z-index: 999;
+    display: flex; align-items: center; gap: 10px;
+    max-width: 330px; padding: 12px 14px;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--gold); border-left: 4px solid var(--gold);
+    border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    font-size: 13px; font-weight: 600; line-height: 1.35; cursor: pointer;
+  }
+  /* display:flex le gana al atributo hidden, hay que apagarlo a mano */
+  .toast-reingresos[hidden] { display: none; }
+  .toast-reingresos .ico { flex-shrink: 0; }
+  .toast-reingresos .txt { flex: 1; min-width: 0; }
+  .toast-reingresos .cerrar {
+    flex-shrink: 0; background: none; border: none; color: var(--text-muted);
+    font-size: 14px; line-height: 1; padding: 2px 4px; cursor: pointer;
+    font-family: inherit;
+  }
+  .toast-reingresos .cerrar:hover { color: var(--text); }
+
+  /* Tabla de posibles reingresos */
+  .mg-reing-cnt { color: var(--gold); font-weight: 700; margin-left: 6px; }
+  .mg-reing-tabla th:nth-child(1), .mg-reing-tabla td:nth-child(1) { width: 11%; }
+  .mg-reing-tabla th:nth-child(2), .mg-reing-tabla td:nth-child(2) { width: 25%; }
+  .mg-reing-tabla th:nth-child(3), .mg-reing-tabla td:nth-child(3) { width: 12%; }
+  .mg-reing-tabla th:nth-child(4), .mg-reing-tabla td:nth-child(4) { width: 25%; }
+  .mg-reing-tabla th:nth-child(5), .mg-reing-tabla td:nth-child(5) { width: 12%; }
+  .mg-reing-tabla th:nth-child(6), .mg-reing-tabla td:nth-child(6) { width: 15%; }
+  .mg-reing-tabla td.coment { white-space: normal; overflow-wrap: break-word; color: var(--text-muted); }
+  .mg-reing-tabla td.acc { text-align: right; white-space: nowrap; }
+  .mg-reing-tabla td.err { color: var(--error); font-size: 11.5px; font-weight: 600; }
+  .btn-reing {
+    border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
+    border-radius: 7px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-reing + .btn-reing { margin-left: 6px; }
+  .btn-reing.si { border-color: var(--success); color: var(--success); }
+  .btn-reing.si:hover:not([disabled]) { background: rgba(46,204,113,0.15); }
+  .btn-reing.no:hover:not([disabled]) { border-color: var(--text-muted); }
+  .btn-reing[disabled] { opacity: 0.45; cursor: default; }
+
   @media (max-width: 900px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .charts-grid { grid-template-columns: 1fr; }
@@ -435,6 +478,14 @@ var cstSession = guard(["admin","manager","developer"]);
 </style>
 </head>
 <body>
+
+<!-- Aviso de reingresos por revisar; se llena desde cargarReingresos() -->
+<div class="toast-reingresos" id="toast-reingresos" hidden>
+  <span class="ico">⚠️</span>
+  <span class="txt" id="toast-reingresos-txt"></span>
+  <button class="cerrar" id="toast-reingresos-cerrar" title="Cerrar aviso" aria-label="Cerrar aviso">✕</button>
+</div>
+
 <div class="container">
 
   <!-- HEADER -->
@@ -450,7 +501,7 @@ var cstSession = guard(["admin","manager","developer"]);
       <span id="clockDate"></span>
       <span id="lastUpdate" style="display:none;font-size:11px;color:var(--text-muted);margin-top:4px;display:block"></span>
     </div>
-    <button onclick="loadData(); cargarVisionGeneral();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
+    <button onclick="loadData(); cargarVisionGeneral(); cargarReingresos();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
   </div>
 
   <div class="mg-note">Actualiza cada hora.</div>
@@ -577,6 +628,27 @@ var cstSession = guard(["admin","manager","developer"]);
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <div class="card" id="mg-reingresos-card">
+      <div class="section-title">Posibles reingresos<span class="mg-reing-cnt" id="mg-reingresos-cnt"></span></div>
+      <div class="table-wrap">
+        <table class="mg-reing-tabla">
+          <thead>
+            <tr>
+              <th>Placa</th>
+              <th>Comentario 1</th>
+              <th>Fecha 1</th>
+              <th>Comentario 2</th>
+              <th>Fecha 2</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="mg-reingresos">
+            <tr><td colspan="6" class="loading">Cargando…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -1387,7 +1459,118 @@ var cstSession = guard(["admin","manager","developer"]);
   setInterval(updateClock, 60000);
   setInterval(loadData, 300000);
   loadData();
+  // ── REINGRESOS ─────────────────────────────────────────────────────────
+  // El Worker propone pares de órdenes de la misma placa en el mismo mes; aquí
+  // el manager confirma cuáles fueron de verdad un reingreso.
+  let reingresosPendientes = [];
+  let toastReingresosCerrado = false; // se mantiene mientras dure la página
+
+  /* Los comentarios vienen de Motokontrol y son texto libre: un < suelto
+     rompería la tabla, así que se escapan antes de inyectarlos. */
+  function escHtml(v){
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderReingresos(){
+    const cuerpo = document.getElementById('mg-reingresos');
+    const cnt = document.getElementById('mg-reingresos-cnt');
+    cnt.textContent = reingresosPendientes.length ? '(' + reingresosPendientes.length + ')' : '';
+
+    if(!reingresosPendientes.length){
+      cuerpo.innerHTML = '<tr><td colspan="6" class="loading">No hay reingresos por revisar</td></tr>';
+      return;
+    }
+
+    cuerpo.innerHTML = reingresosPendientes.map(c =>
+      '<tr data-fila="' + c.id + '">' +
+        '<td class="placa">' + escHtml(c.placa || '—') + '</td>' +
+        '<td class="coment">' + escHtml(c.comentario_1 || '—') + '</td>' +
+        '<td>' + fmtFecha(c.fecha_1) + '</td>' +
+        '<td class="coment">' + escHtml(c.comentario_2 || '—') + '</td>' +
+        '<td>' + fmtFecha(c.fecha_2) + '</td>' +
+        '<td class="acc">' +
+          '<button class="btn-reing si" data-id="' + c.id + '" data-decision="si">Sí</button>' +
+          '<button class="btn-reing no" data-id="' + c.id + '" data-decision="no">No</button>' +
+        '</td>' +
+      '</tr>'
+    ).join('');
+  }
+
+  function actualizarToastReingresos(){
+    const toast = document.getElementById('toast-reingresos');
+    const n = reingresosPendientes.length;
+    if(toastReingresosCerrado || n === 0){ toast.hidden = true; return; }
+    document.getElementById('toast-reingresos-txt').textContent =
+      '⚠️ ' + n + (n === 1 ? ' posible reingreso por revisar' : ' posibles reingresos por revisar');
+    toast.hidden = false;
+  }
+
+  async function revisarReingreso(id, decision, boton){
+    const fila = boton.closest('tr');
+    const celda = boton.closest('td');
+    const botones = fila.querySelectorAll('.btn-reing');
+    botones.forEach(b => { b.disabled = true; });
+
+    try {
+      const res = await authFetch(`${WORKER_URL}/reingresos/revisar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, decision: decision }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
+
+      // Revisado: sale de la lista y la tabla se vuelve a pintar.
+      reingresosPendientes = reingresosPendientes.filter(c => c.id !== id);
+      renderReingresos();
+      actualizarToastReingresos();
+    } catch (err) {
+      console.error('Revisar reingreso falló:', err);
+      botones.forEach(b => { b.disabled = false; });
+      celda.classList.add('err');
+      const previo = celda.innerHTML;
+      celda.innerHTML = 'No se pudo guardar';
+      setTimeout(() => { celda.classList.remove('err'); celda.innerHTML = previo; }, 2500);
+    }
+  }
+
+  async function cargarReingresos(){
+    const cuerpo = document.getElementById('mg-reingresos');
+    try {
+      const res = await authFetch(`${WORKER_URL}/reingresos`);
+      const data = await res.json();
+      reingresosPendientes = data.candidatos || [];
+      renderReingresos();
+      actualizarToastReingresos();
+    } catch (err) {
+      console.error('Cargar reingresos falló:', err);
+      cuerpo.innerHTML = '<tr><td colspan="6" class="loading">No se pudo cargar</td></tr>';
+    }
+  }
+
+  // Delegación: un solo listener que sobrevive a cada repintado de la tabla.
+  document.getElementById('mg-reingresos').addEventListener('click', (e) => {
+    const boton = e.target.closest('.btn-reing');
+    if(!boton || boton.disabled) return;
+    revisarReingreso(Number(boton.dataset.id), boton.dataset.decision, boton);
+  });
+
+  document.getElementById('toast-reingresos').addEventListener('click', (e) => {
+    if(e.target.closest('#toast-reingresos-cerrar')) return; // la X cierra, no navega
+    document.getElementById('mg-reingresos-card')
+      .scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('toast-reingresos-cerrar').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toastReingresosCerrado = true;
+    document.getElementById('toast-reingresos').hidden = true;
+  });
+
   cargarVisionGeneral();
+  cargarReingresos();
   setInterval(cargarVisionGeneral, 3600000);
 
   // ── PANEL CHAT ─────────────────────────────────────────────────────────
