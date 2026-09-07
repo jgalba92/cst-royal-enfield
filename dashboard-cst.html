@@ -362,6 +362,14 @@ var cstSession = guard(["admin","manager","developer"]);
   .mg-quality-dot.limpia, .mg-quality-row-bar i.limpia { background: var(--success); }
   .mg-quality-dot.critica, .mg-quality-row-bar i.critica { background: var(--error); }
   .mg-quality-dot.revisar, .mg-quality-row-bar i.revisar { background: var(--gold); }
+  .mg-quality-dot.facturada, .mg-quality-row-bar i.facturada { background: var(--success); }
+  .mg-quality-dot.sinfactura, .mg-quality-row-bar i.sinfactura { background: var(--error); }
+
+  .mg-mostrador-nums { display: flex; gap: 34px; flex-wrap: wrap; }
+  .mg-mostrador-item { display: flex; flex-direction: column; gap: 4px; }
+  .mg-mostrador-item .n { font-size: 26px; font-weight: 700; line-height: 1; }
+  .mg-mostrador-item .l { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .mg-mostrador-nota { font-size: 12px; color: var(--text-muted); margin-top: 14px; }
 
   .mg-bottleneck-note { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
   .mg-bottleneck-note strong { color: var(--text); }
@@ -484,9 +492,9 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-value" id="mg-ticket">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Facturado</div>
+        <div class="kpi-label">Facturado mes</div>
         <div class="kpi-value" id="mg-facturado">$—</div>
-        <div class="kpi-sub">Siigo pend.</div>
+        <div class="kpi-sub">Siigo</div>
       </div>
       <div class="card">
         <div class="kpi-label">Tasa reingreso</div>
@@ -508,10 +516,17 @@ var cstSession = guard(["admin","manager","developer"]);
         </div>
       </div>
       <div class="card">
-        <div class="section-title">Calidad de datos</div>
-        <div class="mg-quality-wrap" id="mg-calidadDatos">
+        <div class="section-title">Cobertura de facturación</div>
+        <div class="mg-quality-wrap" id="mg-coberturaFacturacion">
           <div class="loading">Cargando…</div>
         </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="section-title">Ventas mostrador</div>
+      <div id="mg-ventasMostrador">
+        <div class="loading">Cargando…</div>
       </div>
     </div>
 
@@ -1109,7 +1124,7 @@ var cstSession = guard(["admin","manager","developer"]);
   }
 
   /* Fila del desglose: punto de color + etiqueta + valor + barra proporcional
-     al total del desglose (limpias + críticas + revisar). */
+     al total que se le pase. */
   function filaCalidad(clase, label, valor, total){
     const pctBarra = total > 0 ? Math.round((valor / total) * 100) : 0;
     return (
@@ -1123,30 +1138,31 @@ var cstSession = guard(["admin","manager","developer"]);
     );
   }
 
-  function renderCalidadDatos(cd, criticas, revisar){
-    const cont = document.getElementById('mg-calidadDatos');
-    const limpias = cd?.limpias ?? 0;
-    criticas = criticas ?? 0;
-    revisar = revisar ?? 0;
-    const pct = cd?.pct_limpio ?? 0;
-    const totalDesglose = limpias + criticas + revisar;
+  /* Cobertura de facturación: de las órdenes ya entregadas, cuántas tienen
+     factura en Siigo. Sustituye a la vieja "calidad de datos", que se apoyaba
+     en el campo total de Motokontrol (inflado y no confiable). */
+  function renderCoberturaFacturacion(mg){
+    const cont = document.getElementById('mg-coberturaFacturacion');
+    const entregadas = mg?.entregadas_total ?? 0;
+    const sinFactura = mg?.entregadas_sin_factura ?? 0;
+    const facturadas = Math.max(entregadas - sinFactura, 0);
+    const pct = mg?.pct_facturado ?? 0;
 
     cont.innerHTML =
-      '<div class="mg-quality-donut"><canvas id="chartCalidadDatos"></canvas>' +
-        '<div class="mg-quality-pct"><span class="n">' + pct + '%</span><span class="l">limpio</span></div>' +
+      '<div class="mg-quality-donut"><canvas id="chartCoberturaFacturacion"></canvas>' +
+        '<div class="mg-quality-pct"><span class="n">' + pct + '%</span><span class="l">facturado</span></div>' +
       '</div>' +
       '<div class="mg-quality-breakdown">' +
-        filaCalidad('limpia', 'Limpias', limpias, totalDesglose) +
-        filaCalidad('critica', 'Críticas', criticas, totalDesglose) +
-        filaCalidad('revisar', 'Por revisar', revisar, totalDesglose) +
+        filaCalidad('facturada', 'Facturadas', facturadas, entregadas) +
+        filaCalidad('sinfactura', 'Sin factura', sinFactura, entregadas) +
       '</div>';
 
-    destroyChart('calidadDatos');
-    chartInstances.calidadDatos = new Chart(document.getElementById('chartCalidadDatos'), {
+    destroyChart('coberturaFacturacion');
+    chartInstances.coberturaFacturacion = new Chart(document.getElementById('chartCoberturaFacturacion'), {
       type: 'doughnut',
       data: {
-        labels: ['Limpias', 'Críticas', 'Por revisar'],
-        datasets: [{ data: [limpias, criticas, revisar], backgroundColor: ['#2ECC71', '#FF4D4D', '#C9A84C'], borderWidth: 0 }],
+        labels: ['Facturadas', 'Sin factura'],
+        datasets: [{ data: [facturadas, sinFactura], backgroundColor: ['#2ECC71', '#FF4D4D'], borderWidth: 0 }],
       },
       options: {
         cutout: '72%',
@@ -1161,6 +1177,27 @@ var cstSession = guard(["admin","manager","developer"]);
         },
       },
     });
+  }
+
+  /* Ventas de mostrador: facturas de Siigo sin ticket de servicio, es decir
+     repuestos vendidos sin abrir orden de taller. */
+  function renderVentasMostrador(vm){
+    const cont = document.getElementById('mg-ventasMostrador');
+    const cantidad = vm?.cantidad ?? 0;
+    const total = vm?.total ?? 0;
+
+    cont.innerHTML =
+      '<div class="mg-mostrador-nums">' +
+        '<div class="mg-mostrador-item">' +
+          '<span class="n">' + cantidad + '</span>' +
+          '<span class="l">' + (cantidad === 1 ? 'factura' : 'facturas') + '</span>' +
+        '</div>' +
+        '<div class="mg-mostrador-item">' +
+          '<span class="n">' + fmtPesos(total) + '</span>' +
+          '<span class="l">total</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="mg-mostrador-nota">Ventas de repuestos sin pasar por taller.</div>';
   }
 
   /* Barras con el total de motos (activas + terminadas) por técnico,
@@ -1269,11 +1306,13 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-pendientes24h').textContent = mg.pendientes_mas_24h ?? '—';
       document.getElementById('mg-entregasMes').textContent = r.entregadas_mes ?? '—';
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
+      document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
       document.getElementById('mg-revisar').textContent = data.criticas ?? 0;
       document.getElementById('mg-revisar-sub').textContent = (data.revisar ?? 0) + ' más por revisar';
 
       renderServiciosFrecuentes(mg.servicios_frecuentes || []);
-      renderCalidadDatos(mg.calidad_datos || {}, data.criticas, data.revisar);
+      renderCoberturaFacturacion(mg);
+      renderVentasMostrador(mg.ventas_mostrador || {});
       renderMotosPorTecnico(data.por_tecnico || []);
       renderValorPorDia(mg.valor_por_dia || []);
       renderUltimasSalidas(mg.ultimas_salidas || []);
@@ -1285,10 +1324,12 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-pendientes24h').textContent = '—';
       document.getElementById('mg-entregasMes').textContent = '—';
       document.getElementById('mg-ticket').textContent = '—';
+      document.getElementById('mg-facturado').textContent = '$—';
       document.getElementById('mg-revisar').textContent = '—';
       document.getElementById('mg-revisar-sub').textContent = '';
       document.getElementById('mg-serviciosFrecuentes').innerHTML = '<div class="loading">No se pudo cargar</div>';
-      document.getElementById('mg-calidadDatos').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-coberturaFacturacion').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-ventasMostrador').innerHTML = '<div class="loading">No se pudo cargar</div>';
       document.getElementById('mg-ultimasSalidas').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
       document.getElementById('mg-listasEntrega').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
       document.getElementById('mg-error').style.display = 'block';
