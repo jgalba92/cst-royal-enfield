@@ -550,7 +550,7 @@ var cstSession = guard(["admin","manager","developer"]);
       <div class="card">
         <div class="kpi-label">Tasa reingreso</div>
         <div class="kpi-value" id="mg-reingreso">—</div>
-        <div class="kpi-sub" id="mg-reingreso-sub">Próximamente</div>
+        <div class="kpi-sub" id="mg-reingreso-sub"></div>
       </div>
       <div class="card">
         <div class="kpi-label">A revisar</div>
@@ -1379,6 +1379,11 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-entregasMes').textContent = r.entregadas_mes ?? '—';
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
       document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
+      const tasaReingreso = mg.tasa_reingreso;
+      document.getElementById('mg-reingreso').textContent =
+        tasaReingreso != null ? tasaReingreso + '%' : '—';
+      document.getElementById('mg-reingreso-sub').textContent =
+        tasaReingreso != null ? (mg.reingresos_confirmados ?? 0) + ' de ' + (mg.ordenes_mes ?? 0) : '';
       document.getElementById('mg-revisar').textContent = data.criticas ?? 0;
       document.getElementById('mg-revisar-sub').textContent = (data.revisar ?? 0) + ' más por revisar';
 
@@ -1397,6 +1402,8 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-entregasMes').textContent = '—';
       document.getElementById('mg-ticket').textContent = '—';
       document.getElementById('mg-facturado').textContent = '$—';
+      document.getElementById('mg-reingreso').textContent = '—';
+      document.getElementById('mg-reingreso-sub').textContent = '';
       document.getElementById('mg-revisar').textContent = '—';
       document.getElementById('mg-revisar-sub').textContent = '';
       document.getElementById('mg-serviciosFrecuentes').innerHTML = '<div class="loading">No se pudo cargar</div>';
