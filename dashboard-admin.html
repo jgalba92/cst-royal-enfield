@@ -84,6 +84,7 @@
   tbody tr:last-child td{border-bottom:none;}
   td.placa{font-family:var(--mono);font-weight:700;}
   td.dias,th.dias,td.valor,th.valor{text-align:right;font-family:var(--mono);}
+  td.valor .tenue{color:var(--muted);font-style:italic;}
   .estado-pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;}
   .estado-pill.pend{background:rgba(59,130,246,.15);color:var(--c-pend);}
   .estado-pill.trab{background:rgba(168,85,247,.15);color:var(--c-trab);}
@@ -180,11 +181,12 @@
               <th>Estado</th>
               <th>Servicio</th>
               <th class="dias">Días</th>
-              <th class="valor">Valor</th>
+              <th class="valor">Valor MK</th>
+              <th class="valor">Valor Siigo</th>
             </tr>
           </thead>
           <tbody id="tabla-body">
-            <tr><td colspan="6" class="loading">Cargando…</td></tr>
+            <tr><td colspan="7" class="loading">Cargando…</td></tr>
           </tbody>
         </table>
       </div>
@@ -258,8 +260,8 @@ function parseFechaInput(valor){
 /* Misma clasificación que usa el Worker para "inconsistencias", pero
    aplicada aquí a cualquier orden de todas_ordenes para el filtro. */
 function clasificarInconsistencia(o){
-  if(o.tecnico === "Tecnico De" || o.total > 20000000) return "critica";
-  if(o.total >= 15000000 && o.total <= 20000000) return "revisar";
+  if(o.tecnico === "Tecnico De" || o.valor_motokontrol > 20000000) return "critica";
+  if(o.valor_motokontrol >= 15000000 && o.valor_motokontrol <= 20000000) return "revisar";
   return "limpia";
 }
 
@@ -286,6 +288,17 @@ function filtrarYOrdenar(){
     .sort((a,b) => (b.dias_en_taller ?? -1) - (a.dias_en_taller ?? -1));
 }
 
+/* Valor Siigo, tres casos distintos:
+     - no hay factura            -> "sin facturar"
+     - hay factura pero sin total -> "—"  (no es lo mismo que cero)
+     - hay factura con total      -> el valor, incluido $0 real
+   El estado lo decide el Worker con num_facturas, no el valor. */
+function celdaValorSiigo(o){
+  if(o.estado_factura !== "facturado") return '<span class="tenue">sin facturar</span>';
+  if(o.valor_siigo === null || o.valor_siigo === undefined) return '<span class="tenue">—</span>';
+  return fmtPesos(o.valor_siigo);
+}
+
 function filaTabla(o){
   const info = ESTADO_INFO[o.estado] || { clase: "pend", label: o.estado || "—" };
   const dias = (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "—" : o.dias_en_taller;
@@ -296,7 +309,8 @@ function filaTabla(o){
       '<td><span class="estado-pill ' + info.clase + '">' + info.label + '</span></td>' +
       '<td>' + (o.servicio || "Sin descripción") + '</td>' +
       '<td class="dias">' + dias + '</td>' +
-      '<td class="valor">' + fmtPesos(o.total) + '</td>' +
+      '<td class="valor">' + fmtPesos(o.valor_motokontrol) + '</td>' +
+      '<td class="valor">' + celdaValorSiigo(o) + '</td>' +
     '</tr>'
   );
 }
@@ -312,7 +326,7 @@ function renderTabla(){
   const filas = filtrarYOrdenar();
   actualizarContador(filas.length);
   const cuerpo = document.getElementById("tabla-body");
-  const colspan = 6;
+  const colspan = 7;
   if(filas.length === 0){
     cuerpo.innerHTML = '<tr><td colspan="' + colspan + '" class="empty">Sin órdenes que coincidan con el filtro.</td></tr>';
     return;
@@ -337,7 +351,7 @@ function celdaCSV(valor){
 
 function exportarCSV(){
   const filas = filtrarYOrdenar();
-  const encabezados = ["Placa","Técnico","Estado","Servicio","Días","Valor"];
+  const encabezados = ["Placa","Técnico","Estado","Servicio","Días","Valor MK","Valor Siigo"];
 
   const lineas = [encabezados.map(celdaCSV).join(",")];
   filas.forEach(o => {
@@ -348,7 +362,8 @@ function exportarCSV(){
       info.label,
       o.servicio || "",
       (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "" : o.dias_en_taller,
-      o.total ?? "",
+      o.valor_motokontrol ?? "",
+      o.estado_factura === "facturado" ? (o.valor_siigo ?? "") : "sin facturar",
     ];
     lineas.push(fila.map(celdaCSV).join(","));
   });
@@ -395,7 +410,7 @@ async function cargarTallerEstado(){
     document.getElementById("kpi-criticas").textContent = "—";
     document.getElementById("carga-tecnico").innerHTML = '<div class="empty">No se pudo cargar.</div>';
     document.getElementById("contador-filtro").textContent = "";
-    const colspan = 6;
+    const colspan = 7;
     document.getElementById("tabla-body").innerHTML =
       '<tr><td colspan="' + colspan + '" class="empty">No se pudo conectar con el servidor. Reintenta.</td></tr>';
   }
