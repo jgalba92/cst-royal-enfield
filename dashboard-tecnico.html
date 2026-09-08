@@ -62,6 +62,22 @@
   .alerta-item.revisar{border-left-color:var(--accent-ink);}
   .refresh-note{font-size:11px;color:var(--muted);margin:-8px 0 18px;}
 
+  .tiempos{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:18px;}
+  .tiempos-titulo{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    font-weight:600;margin-bottom:12px;display:flex;align-items:center;}
+  .tiempo-list{display:flex;flex-direction:column;gap:10px;}
+  .tiempo-row{min-width:0;}
+  .tiempo-head{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:5px;}
+  .tiempo-head .nombre{font-weight:600;overflow-wrap:break-word;min-width:0;}
+  /* El promedio se lee fuerte; el número de motos queda tenue para que se note
+     cuando el dato sale de muy pocos casos. */
+  .tiempo-head .val{color:var(--muted);flex-shrink:0;}
+  .tiempo-head .val b{color:var(--ink);font-weight:600;}
+  .tiempo-bar{height:8px;border-radius:99px;background:var(--panel-2);overflow:hidden;}
+  .tiempo-bar i{display:block;height:100%;background:var(--accent-ink);}
+  .tiempo-vacio{color:var(--muted);font-size:13px;line-height:1.5;}
+
   .grupos{min-width:0;}
   section.grupo{margin-bottom:20px;min-width:0;}
   .grupo-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
@@ -167,6 +183,11 @@
       <div class="alerta-list" id="alerta-list"></div>
     </div>
     <div class="refresh-note">Actualiza cada hora.</div>
+
+    <div class="tiempos">
+      <div class="tiempos-titulo">Tus tiempos<span class="info" tabindex="0" data-info="Cuánto tardas en promedio en cada etapa de tus reparaciones.">i</span></div>
+      <div class="tiempo-list" id="mis-tiempos"><div class="tiempo-vacio">Cargando…</div></div>
+    </div>
 
     <div class="grupos">
       <section class="grupo">
@@ -286,11 +307,58 @@ function renderGrupo(id, cntId, motos, masViejaConsecutivo){
     .join("");
 }
 
+/* Cuánto tarda este técnico en cada etapa. Mismas etiquetas que el tablero de
+   gerencia, pero sin filtro: aquí solo están sus propios tiempos. */
+const TIEMPO_ETAPAS = [
+  { estado: "Pendiente",   label: "Esperando inicio" },
+  { estado: "En Atención", label: "En reparación" },
+  { estado: "Atendido",    label: "Esperando entrega" },
+];
+
+/* Bajo un día el promedio en días no dice nada ("0.3 días"), así que ahí se
+   muestra en horas. */
+function fmtDuracion(fila){
+  const dias = fila.promedio_dias ?? 0;
+  if(dias >= 1) return dias + (dias === 1 ? " día" : " días");
+  const horas = fila.promedio_horas ?? 0;
+  return horas + (horas === 1 ? " hora" : " horas");
+}
+
+function renderMisTiempos(lista){
+  const cont = document.getElementById("mis-tiempos");
+  const porEstado = {};
+  for(const f of (lista || [])) porEstado[f.estado] = f;
+
+  // El ancho va por horas, no por días, para no perder resolución cuando una
+  // etapa dura menos de un día.
+  const max = Math.max(1, ...(lista || []).map(f => f.promedio_horas || 0));
+  const barras = TIEMPO_ETAPAS.map(e => {
+    const f = porEstado[e.estado];
+    if(!f) return "";
+    const pct = Math.round(((f.promedio_horas || 0) / max) * 100);
+    const motos = f.muestras === 1 ? "1 moto" : (f.muestras ?? 0) + " motos";
+    return (
+      '<div class="tiempo-row">' +
+        '<div class="tiempo-head">' +
+          '<span class="nombre">' + e.label + '</span>' +
+          '<span class="val"><b>' + fmtDuracion(f) + '</b> (' + motos + ')</span>' +
+        '</div>' +
+        '<div class="tiempo-bar"><i style="width:' + pct + '%"></i></div>' +
+      '</div>'
+    );
+  }).join("");
+
+  cont.innerHTML = barras ||
+    '<div class="tiempo-vacio">Aún acumulando datos, disponible en unos días.</div>';
+}
+
 async function cargarTallerEstado(){
   try{
     const res = await authFetch(API + "/taller-estado");
     const data = await res.json();
     const misOrdenes = data.mis_ordenes || [];
+
+    renderMisTiempos(data.mi_tiempo_por_estado || []);
 
     const porEstado = { "Pendiente": [], "En Atención": [], "Atendido": [] };
     misOrdenes.forEach(m => {
@@ -338,6 +406,7 @@ async function cargarTallerEstado(){
     document.getElementById("cnt-trabajo").textContent = "—";
     document.getElementById("cnt-listas").textContent = "—";
     document.getElementById("mv-valor").textContent = "—";
+    document.getElementById("mis-tiempos").innerHTML = '<div class="tiempo-vacio">No se pudo cargar.</div>';
     ["sec-pendiente","sec-trabajo","sec-listas"].forEach(id => {
       document.getElementById(id).innerHTML = '<div class="empty">No se pudo cargar el estado del taller.</div>';
     });
