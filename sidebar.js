@@ -23,11 +23,11 @@
   };
 
   var ITEMS = [
-    { key: "taller",       label: "Taller",            href: "dashboard-admin.html", roles: ["admin", "manager", "developer"] },
-    { key: "datos",        label: "Datos y gráficas",  href: "dashboard-cst.html",   roles: ["admin", "manager", "developer"] },
-    { key: "ia",           label: "Asistente IA",       href: "agente-cst.html",      roles: ["admin", "manager", "developer"] },
-    { key: "correcciones", label: "Correcciones",       href: "correcciones.html",    roles: ["manager", "developer"] },
-    { key: "contrasenas",  label: "Contraseñas",        href: "reset-usuarios.html",  roles: ["developer"] },
+    { key: "taller",       label: "Taller",              href: "dashboard-admin.html", roles: ["admin", "manager", "developer"] },
+    { key: "datos",        label: "Dashboard Gerencial", href: "dashboard-cst.html",   roles: ["admin", "manager", "developer"] },
+    { key: "ia",           label: "Asistente IA",        href: "agente-cst.html",      roles: ["admin", "manager", "developer"] },
+    { key: "correcciones", label: "Correcciones",        href: "correcciones.html",    roles: ["manager", "developer"] },
+    { key: "contrasenas",  label: "Contraseñas",         href: "reset-usuarios.html",  roles: ["developer"] },
   ];
 
   function svg(nombre) {

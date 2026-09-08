@@ -28,7 +28,7 @@
       texto: "Bandeja de correcciones pendientes. Manager y developer revisan, aprueban o rechazan; al aprobar, el cambio se aplica al registro real."
     },
     "dashboard-cst.html": {
-      titulo: "Tablero del taller",
+      titulo: "Dashboard Gerencial",
       texto: "Vista general de la operación en tiempo real: motos en taller, entradas y salidas del día e indicadores clave."
     },
     "dashboard-admin.html": {

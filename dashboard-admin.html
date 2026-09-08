@@ -131,10 +131,10 @@
     <div class="refresh-note">Actualiza cada hora.</div>
 
     <div class="kpis">
-      <div class="kpi"><div class="label">En taller<span class="info" tabindex="0" data-info="Resumen del taller ahora mismo: cuántas motos hay, cuántas se están reparando, cuántas están listas y cuántas tienen algo por revisar.">i</span></div><div class="val" id="kpi-entaller">—</div></div>
-      <div class="kpi"><div class="label">Trabajando</div><div class="val" id="kpi-trabajando">—</div></div>
-      <div class="kpi"><div class="label">Por entregar</div><div class="val" id="kpi-terminadas">—</div></div>
-      <div class="kpi bad"><div class="label">Críticas</div><div class="val" id="kpi-criticas">—</div></div>
+      <div class="kpi"><div class="label">En taller<span class="info" tabindex="0" data-info="Total de motos que están en el taller ahora mismo (sin entregar).">i</span></div><div class="val" id="kpi-entaller">—</div></div>
+      <div class="kpi"><div class="label">Trabajando<span class="info" tabindex="0" data-info="Motos que se están reparando en este momento.">i</span></div><div class="val" id="kpi-trabajando">—</div></div>
+      <div class="kpi"><div class="label">Por entregar<span class="info" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja.">i</span></div><div class="val" id="kpi-terminadas">—</div></div>
+      <div class="kpi bad"><div class="label">Críticas<span class="info der" tabindex="0" data-info="Órdenes con algo inusual que conviene revisar en Motokontrol.">i</span></div><div class="val" id="kpi-criticas">—</div></div>
     </div>
 
     <h2>Carga por técnico<span class="info" tabindex="0" data-info="Cuántas motos tiene cada técnico: en reparación (morado) y ya terminadas (verde).">i</span></h2>
@@ -151,7 +151,7 @@
       </div>
     </div>
 
-    <h2>Órdenes en taller<span class="info" tabindex="0" data-info="Lista de todas las motos en el taller, con su técnico, estado y valor. Puedes filtrar y exportar.">i</span></h2>
+    <h2>Órdenes en taller<span class="info" tabindex="0" data-info="Lista de todas las motos en el taller. Usa los filtros para buscar por técnico, fechas, estado o inconsistencia, y exporta a Excel con el botón CSV.">i</span></h2>
     <div class="filtros">
       <div class="filtro-campo">
         <label for="filtro-tecnico">Técnico</label>

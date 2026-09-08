@@ -206,6 +206,9 @@ var cstSession = guard(["admin","manager","developer"]);
   .kpi-value.red { color: var(--red); }
   .kpi-value.gold { color: var(--gold); }
 
+  .kpi-sub .sube { color: var(--success); }
+  .kpi-sub .baja { color: var(--gold); }
+  .kpi-sub .tenue { color: var(--text-muted); }
   .kpi-sub {
     font-size: 12px;
     color: var(--text-muted);
@@ -520,7 +523,7 @@ var cstSession = guard(["admin","manager","developer"]);
     <a href="index.html" id="link-menu" style="display:none;align-items:center;gap:4px;color:#C9A84C;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0">← Menú</a>
     <img src="assets/re-blanco.png" alt="Royal Enfield" style="height:36px;width:auto;flex-shrink:0">
     <div class="header-left">
-      <h1 id="titulo">Visión general</h1>
+      <h1 id="titulo">Dashboard Gerencial</h1>
       <p>CST Royal Enfield · Zona T</p>
     </div>
     <div class="header-clock">
@@ -546,21 +549,21 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-kpis">
       <div class="card">
-        <div class="kpi-label">En taller<span class="info" tabindex="0" data-info="Estado general del taller: motos presentes, las que llevan más de un día, las entregadas este mes.">i</span></div>
+        <div class="kpi-label">En taller<span class="info" tabindex="0" data-info="Total de motos que están en el taller ahora mismo (sin entregar).">i</span></div>
         <div class="kpi-value" id="mg-enTaller">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Pendientes +24h</div>
+        <div class="kpi-label">Pendientes +24h<span class="info" tabindex="0" data-info="Motos que llevan más de un día en el taller sin salir.">i</span></div>
         <div class="kpi-value red" id="mg-pendientes24h">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Entregadas mes</div>
+        <div class="kpi-label">Entregadas mes<span class="info" tabindex="0" data-info="Motos entregadas a sus dueños este mes.">i</span></div>
         <div class="kpi-value" id="mg-entregasMes">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Entrega a tiempo</div>
-        <div class="kpi-value gold" id="mg-entregaTiempo">—</div>
-        <div class="kpi-sub" id="mg-entregaTiempo-sub">Próximamente</div>
+        <div class="kpi-label">Entregadas hoy<span class="info der" tabindex="0" data-info="Motos entregadas hoy, comparado con ayer.">i</span></div>
+        <div class="kpi-value gold" id="mg-entregadasHoy">—</div>
+        <div class="kpi-sub" id="mg-entregadasHoy-sub"></div>
       </div>
     </div>
 
@@ -610,7 +613,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-charts-grid">
       <div class="card">
-        <div class="section-title">Motos por técnico</div>
+        <div class="section-title">Motos por técnico<span class="info" tabindex="0" data-info="Cuántas motos tiene asignadas cada técnico.">i</span></div>
         <canvas id="chartMotosTecnico" height="200"></canvas>
       </div>
       <div class="card" id="mg-valorPorDia-card">
@@ -621,7 +624,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:20px">
-      <div class="section-title">¿Dónde se atasca?</div>
+      <div class="section-title">¿Dónde se atasca?<span class="info" tabindex="0" data-info="En qué etapa se demoran más las motos, para ver el cuello de botella.">i</span></div>
       <div class="mg-bottleneck-note">
         <strong>Datos disponibles pronto.</strong> El tiempo promedio por estado (cuánto tarda una moto en
         pasar de pendiente a en atención, y de ahí a atendida) se calculará una vez el historial de
@@ -1406,6 +1409,12 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-entregasMes').textContent = r.entregadas_mes ?? '—';
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
       document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
+      const entregas = mg.entregadas_hoy_ayer || {};
+      const entregadasHoy = entregas.hoy ?? 0;
+      document.getElementById('mg-entregadasHoy').textContent = entregadasHoy;
+      document.getElementById('mg-entregadasHoy-sub').innerHTML =
+        subEntregadasHoy(entregadasHoy, entregas.ayer ?? 0);
+
       const tasaReingreso = mg.tasa_reingreso;
       document.getElementById('mg-reingreso').textContent =
         tasaReingreso != null ? tasaReingreso + '%' : '—';
@@ -1429,6 +1438,8 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-entregasMes').textContent = '—';
       document.getElementById('mg-ticket').textContent = '—';
       document.getElementById('mg-facturado').textContent = '$—';
+      document.getElementById('mg-entregadasHoy').textContent = '—';
+      document.getElementById('mg-entregadasHoy-sub').innerHTML = '';
       document.getElementById('mg-reingreso').textContent = '—';
       document.getElementById('mg-reingreso-sub').textContent = '';
       document.getElementById('mg-revisar').textContent = '—';
@@ -1547,6 +1558,16 @@ var cstSession = guard(["admin","manager","developer"]);
         '</td>' +
       '</tr>'
     ).join('');
+  }
+
+  /* Subtexto del KPI de entregas: la comparación con ayer. Sin dato de ayer
+     no se inventa una diferencia, se dice que no lo hay. */
+  function subEntregadasHoy(hoy, ayer){
+    if(!ayer) return '<span class="tenue">ayer: —</span>';
+    const dif = hoy - ayer;
+    if(dif > 0) return '<span class="sube">▲ ' + dif + ' más que ayer</span>';
+    if(dif < 0) return '<span class="baja">▼ ' + (-dif) + ' menos que ayer</span>';
+    return '<span class="tenue">= igual que ayer</span>';
   }
 
   function actualizarToastReingresos(){
