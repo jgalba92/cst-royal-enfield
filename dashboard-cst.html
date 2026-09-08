@@ -459,6 +459,17 @@ var cstSession = guard(["admin","manager","developer"]);
   /* La flecha ocupa su lugar desde el principio, aunque esté vacía, para que
      el encabezado no salte al cambiar de columna. */
   .mg-reing-tabla th .flecha { display: inline-block; width: 10px; margin-left: 4px; }
+  .mg-reing-tabla tr.grupo-placa td {
+    background: var(--input-bg);
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .mg-reing-tabla tr.grupo-placa .placa {
+    font-weight: 700; color: var(--text); letter-spacing: 0.02em;
+  }
+  .mg-reing-tabla tr.grupo-placa .cuenta {
+    color: var(--text-muted); font-size: 12px; margin-left: 6px; font-weight: 500;
+  }
   .mg-reing-tabla td.coment { white-space: normal; overflow-wrap: break-word; color: var(--text-muted); }
   .mg-reing-tabla td.acc { text-align: right; white-space: nowrap; }
   .mg-reing-tabla td.err { color: var(--error); font-size: 11.5px; font-weight: 600; }
@@ -1691,6 +1702,24 @@ var cstSession = guard(["admin","manager","developer"]);
     renderReingresos();
   });
 
+  /* Una fila de par. Agrupada, la celda de placa va vacía: el encabezado del
+     grupo ya la dice y repetirla tres veces solo ensucia. */
+  function filaReingreso(c, agrupada){
+    return (
+      '<tr data-fila="' + c.id + '">' +
+        '<td class="placa">' + (agrupada ? '' : escHtml(c.placa || '—')) + '</td>' +
+        '<td class="coment">' + escHtml(c.comentario_1 || '—') + '</td>' +
+        '<td>' + fmtFecha(c.fecha_1) + '</td>' +
+        '<td class="coment">' + escHtml(c.comentario_2 || '—') + '</td>' +
+        '<td>' + fmtFecha(c.fecha_2) + '</td>' +
+        '<td class="acc">' +
+          '<button class="btn-reing si" data-id="' + c.id + '" data-decision="si">Sí</button>' +
+          '<button class="btn-reing no" data-id="' + c.id + '" data-decision="no">No</button>' +
+        '</td>' +
+      '</tr>'
+    );
+  }
+
   function renderReingresos(){
     const cuerpo = document.getElementById('mg-reingresos');
     const cnt = document.getElementById('mg-reingresos-cnt');
@@ -1704,19 +1733,33 @@ var cstSession = guard(["admin","manager","developer"]);
 
     // slice() para no reordenar el array original, que es el que se filtra al
     // revisar un candidato.
-    cuerpo.innerHTML = reingresosPendientes.slice().sort(compararReingresos).map(c =>
-      '<tr data-fila="' + c.id + '">' +
-        '<td class="placa">' + escHtml(c.placa || '—') + '</td>' +
-        '<td class="coment">' + escHtml(c.comentario_1 || '—') + '</td>' +
-        '<td>' + fmtFecha(c.fecha_1) + '</td>' +
-        '<td class="coment">' + escHtml(c.comentario_2 || '—') + '</td>' +
-        '<td>' + fmtFecha(c.fecha_2) + '</td>' +
-        '<td class="acc">' +
-          '<button class="btn-reing si" data-id="' + c.id + '" data-decision="si">Sí</button>' +
-          '<button class="btn-reing no" data-id="' + c.id + '" data-decision="no">No</button>' +
-        '</td>' +
-      '</tr>'
-    ).join('');
+    const filas = reingresosPendientes.slice().sort(compararReingresos);
+
+    // Agrupado solo cuando el orden es por placa. Con cualquier otra columna
+    // el encabezado de grupo pelearía contra el orden pedido (los grupos
+    // romperían la secuencia de fechas), así que ahí la tabla va plana.
+    if(reingOrden.col !== 'placa'){
+      cuerpo.innerHTML = filas.map(c => filaReingreso(c, false)).join('');
+      return;
+    }
+
+    let html = '';
+    let i = 0;
+    while(i < filas.length){
+      const placa = filas[i].placa || '—';
+      let j = i;
+      while(j < filas.length && (filas[j].placa || '—') === placa) j++;
+      const n = j - i;
+
+      html +=
+        '<tr class="grupo-placa"><td colspan="6">' +
+          '<span class="placa">' + escHtml(placa) + '</span>' +
+          '<span class="cuenta">· ' + n + (n === 1 ? ' reingreso' : ' reingresos') + '</span>' +
+        '</td></tr>';
+      for(let k = i; k < j; k++) html += filaReingreso(filas[k], true);
+      i = j;
+    }
+    cuerpo.innerHTML = html;
   }
 
   function actualizarToastReingresos(){
