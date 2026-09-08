@@ -375,6 +375,19 @@ var cstSession = guard(["admin","manager","developer"]);
   .mg-mostrador-nota { font-size: 12px; color: var(--text-muted); margin-top: 14px; }
 
   .mg-bottleneck-note { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+  .mg-cuello-filtro { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .mg-cuello-filtro label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .mg-cuello-filtro select {
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 7px 10px; outline: none;
+  }
+  .mg-cuello-filtro select:focus { border-color: var(--border-focus); }
+  /* El promedio se lee fuerte; el número de motos queda tenue para que se note
+     cuando el dato sale de muy pocos casos. */
+  .mg-cuello-valor { color: var(--text); font-weight: 600; }
   .mg-bottleneck-note strong { color: var(--text); }
 
   .mg-tables-grid {
@@ -625,10 +638,12 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="card" style="margin-bottom:20px">
       <div class="section-title">¿Dónde se atasca?<span class="info" tabindex="0" data-info="En qué etapa se demoran más las motos, para ver el cuello de botella.">i</span></div>
-      <div class="mg-bottleneck-note">
-        <strong>Datos disponibles pronto.</strong> El tiempo promedio por estado (cuánto tarda una moto en
-        pasar de pendiente a en atención, y de ahí a atendida) se calculará una vez el historial de
-        estados acumule suficientes datos.
+      <div class="mg-cuello-filtro">
+        <label for="mg-cuello-tecnico">Técnico</label>
+        <select id="mg-cuello-tecnico"><option value="">Todos</option></select>
+      </div>
+      <div class="mg-servicios-list" id="mg-cuello">
+        <div class="loading">Cargando…</div>
       </div>
     </div>
 
@@ -1304,6 +1319,78 @@ var cstSession = guard(["admin","manager","developer"]);
 
   /* Barras con el total de motos (activas + terminadas) por técnico,
      de mayor a menor. Estilo dorado, igual que las otras barras nuevas. */
+  /* ── ¿Dónde se atasca? ──────────────────────────────────────────────────
+     Tiempo promedio que una moto pasa en cada estado. El Worker manda el
+     agregado general y el desglose por técnico; el filtro decide cuál se
+     pinta, sin volver a pedir nada al servidor. */
+  const CUELLO_ETAPAS = [
+    { estado: 'Pendiente',   label: 'Esperando inicio' },
+    { estado: 'En Atención', label: 'En reparación' },
+    { estado: 'Atendido',    label: 'Esperando entrega' },
+  ];
+  let cuelloGeneral = [];
+  let cuelloPorTecnico = [];
+
+  /* Bajo un día el promedio en días no dice nada ("0.3 días"), así que ahí se
+     muestra en horas. */
+  function fmtDuracion(fila){
+    const dias = fila.promedio_dias ?? 0;
+    if(dias >= 1) return dias + (dias === 1 ? ' día' : ' días');
+    const horas = fila.promedio_horas ?? 0;
+    return horas + (horas === 1 ? ' hora' : ' horas');
+  }
+
+  function poblarFiltroCuello(){
+    const sel = document.getElementById('mg-cuello-tecnico');
+    const previo = sel.value;
+    const tecnicos = [...new Set(cuelloPorTecnico.map(f => f.tecnico).filter(Boolean))].sort();
+
+    sel.innerHTML = '';
+    const todos = document.createElement('option');
+    todos.value = ''; todos.textContent = 'Todos';
+    sel.appendChild(todos);
+    for(const t of tecnicos){
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    }
+    // Al refrescar cada hora no se pierde el técnico que el usuario eligió.
+    if(previo && tecnicos.includes(previo)) sel.value = previo;
+  }
+
+  function renderCuelloBotella(){
+    const cont = document.getElementById('mg-cuello');
+    const tecnico = document.getElementById('mg-cuello-tecnico').value;
+    const filas = tecnico
+      ? cuelloPorTecnico.filter(f => f.tecnico === tecnico)
+      : cuelloGeneral;
+
+    const porEstado = {};
+    for(const f of (filas || [])) porEstado[f.estado] = f;
+
+    const max = Math.max(1, ...(filas || []).map(f => f.promedio_horas || 0));
+    const barras = CUELLO_ETAPAS.map(e => {
+      const f = porEstado[e.estado];
+      if(!f) return '';
+      const pct = Math.round(((f.promedio_horas || 0) / max) * 100);
+      const motos = f.muestras === 1 ? '1 moto' : (f.muestras ?? 0) + ' motos';
+      return (
+        '<div class="mg-servicio-row">' +
+          '<div class="mg-servicio-head">' +
+            '<span class="nombre">' + e.label + '</span>' +
+            '<span class="cant"><span class="mg-cuello-valor">' + fmtDuracion(f) + '</span> (' + motos + ')</span>' +
+          '</div>' +
+          '<div class="mg-servicio-bar"><i style="width:' + pct + '%"></i></div>' +
+        '</div>'
+      );
+    }).join('');
+
+    cont.innerHTML = barras ||
+      '<div class="mg-bottleneck-note">Aún acumulando datos, disponible en unos días.</div>';
+  }
+
+  document.getElementById('mg-cuello-tecnico').addEventListener('change', renderCuelloBotella);
+
   function renderMotosPorTecnico(porTecnico){
     const ordenado = (porTecnico || [])
       .map(t => ({ tecnico: t.tecnico || 'Sin técnico', total: (t.activas || 0) + (t.terminadas || 0) }))
@@ -1426,6 +1513,11 @@ var cstSession = guard(["admin","manager","developer"]);
       renderServiciosFrecuentes(mg.servicios_frecuentes || []);
       renderCoberturaFacturacion(mg);
       renderVentasMostrador(mg.ventas_mostrador || {});
+      cuelloGeneral = mg.tiempo_por_estado || [];
+      cuelloPorTecnico = mg.tiempo_por_estado_tecnico || [];
+      poblarFiltroCuello();
+      renderCuelloBotella();
+
       renderMotosPorTecnico(data.por_tecnico || []);
       renderValorPorDia(mg.valor_por_dia || []);
       renderUltimasSalidas(mg.ultimas_salidas || []);
@@ -1447,6 +1539,7 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-serviciosFrecuentes').innerHTML = '<div class="loading">No se pudo cargar</div>';
       document.getElementById('mg-coberturaFacturacion').innerHTML = '<div class="loading">No se pudo cargar</div>';
       document.getElementById('mg-ventasMostrador').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-cuello').innerHTML = '<div class="loading">No se pudo cargar</div>';
       document.getElementById('mg-ultimasSalidas').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
       document.getElementById('mg-listasEntrega').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
       document.getElementById('mg-error').style.display = 'block';
