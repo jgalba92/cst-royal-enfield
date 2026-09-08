@@ -383,6 +383,33 @@ var cstSession = guard(["admin","manager","developer"]);
 
   .mg-table-scroll { max-height: 340px; overflow-y: auto; overflow-x: hidden; }
 
+  /* Ícono de ayuda: círculo con "i" y tooltip al pasar el mouse o al tocarlo */
+  .info {
+    display: inline-flex; align-items: center; justify-content: center; position: relative;
+    width: 16px; height: 16px; margin-left: 6px; border-radius: 50%;
+    border: 1px solid var(--border); background: none; color: var(--text-muted);
+    font-family: inherit; font-size: 10px; font-weight: 700; font-style: normal;
+    line-height: 1; letter-spacing: 0; text-transform: none; cursor: pointer;
+    vertical-align: middle; flex-shrink: 0; -webkit-user-select: none; user-select: none;
+  }
+  .info:hover, .info:focus, .info.abierto { color: var(--text); border-color: var(--text-muted); }
+  .info::after {
+    content: attr(data-info);
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    width: max-content; max-width: 240px; padding: 8px 10px;
+    background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 11.5px; font-weight: 500; line-height: 1.45;
+    letter-spacing: 0; text-transform: none; text-align: left; white-space: normal;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+    opacity: 0; visibility: hidden; transition: opacity 0.12s;
+    pointer-events: none; z-index: 60;
+  }
+  .info:hover::after, .info:focus::after, .info.abierto::after { opacity: 1; visibility: visible; }
+  /* Para los elementos de la columna derecha, el globo se alinea a la derecha
+     y no se sale de la pantalla. */
+  .info.der::after { left: auto; right: -6px; transform: none; }
+
   /* Aviso flotante de reingresos por revisar */
   .toast-reingresos {
     position: fixed; top: 18px; right: 18px; z-index: 999;
@@ -490,7 +517,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
   <!-- HEADER -->
   <div class="header">
-    <a href="index.html" style="display:inline-flex;align-items:center;gap:4px;color:#C9A84C;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0">← Menú</a>
+    <a href="index.html" id="link-menu" style="display:none;align-items:center;gap:4px;color:#C9A84C;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0">← Menú</a>
     <img src="assets/re-blanco.png" alt="Royal Enfield" style="height:36px;width:auto;flex-shrink:0">
     <div class="header-left">
       <h1 id="titulo">Visión general</h1>
@@ -519,7 +546,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-kpis">
       <div class="card">
-        <div class="kpi-label">En taller</div>
+        <div class="kpi-label">En taller<span class="info" tabindex="0" data-info="Estado general del taller: motos presentes, las que llevan más de un día, las entregadas este mes.">i</span></div>
         <div class="kpi-value" id="mg-enTaller">—</div>
       </div>
       <div class="card">
@@ -539,21 +566,21 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-kpis" style="margin-bottom:20px">
       <div class="card">
-        <div class="kpi-label">Ticket promedio</div>
+        <div class="kpi-label">Ticket promedio<span class="info" tabindex="0" data-info="El valor promedio de una reparación facturada este mes.">i</span></div>
         <div class="kpi-value" id="mg-ticket">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Facturado mes</div>
+        <div class="kpi-label">Facturado mes<span class="info" tabindex="0" data-info="Total facturado en el mes según Siigo (contabilidad).">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
         <div class="kpi-sub">Siigo</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Tasa reingreso</div>
+        <div class="kpi-label">Tasa reingreso<span class="info" tabindex="0" data-info="De las motos que entraron este mes, qué porcentaje volvió por un problema similar.">i</span></div>
         <div class="kpi-value" id="mg-reingreso">—</div>
         <div class="kpi-sub" id="mg-reingreso-sub"></div>
       </div>
       <div class="card">
-        <div class="kpi-label">A revisar</div>
+        <div class="kpi-label">A revisar<span class="info der" tabindex="0" data-info="Órdenes con algo inusual que conviene revisar en Motokontrol.">i</span></div>
         <div class="kpi-value red" id="mg-revisar">—</div>
         <div class="kpi-sub" id="mg-revisar-sub"></div>
       </div>
@@ -561,13 +588,13 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-charts-grid">
       <div class="card">
-        <div class="section-title">Servicios más frecuentes</div>
+        <div class="section-title">Servicios más frecuentes<span class="info" tabindex="0" data-info="Los trabajos que más se repiten en el taller.">i</span></div>
         <div class="mg-servicios-list" id="mg-serviciosFrecuentes">
           <div class="loading">Cargando…</div>
         </div>
       </div>
       <div class="card">
-        <div class="section-title">Cobertura de facturación</div>
+        <div class="section-title">Cobertura de facturación<span class="info der" tabindex="0" data-info="De las motos ya entregadas, cuántas tienen su factura registrada en Siigo.">i</span></div>
         <div class="mg-quality-wrap" id="mg-coberturaFacturacion">
           <div class="loading">Cargando…</div>
         </div>
@@ -575,7 +602,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:12px">
-      <div class="section-title">Ventas mostrador</div>
+      <div class="section-title">Ventas mostrador<span class="info" tabindex="0" data-info="Ventas de repuestos hechas sin pasar por el taller.">i</span></div>
       <div id="mg-ventasMostrador">
         <div class="loading">Cargando…</div>
       </div>
@@ -587,7 +614,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <canvas id="chartMotosTecnico" height="200"></canvas>
       </div>
       <div class="card" id="mg-valorPorDia-card">
-        <div class="section-title">Valor por día</div>
+        <div class="section-title">Valor por día<span class="info der" tabindex="0" data-info="Cuánto se facturó cada día según Siigo.">i</span></div>
         <canvas id="chartValorPorDia" height="200"></canvas>
         <div class="mg-note" style="margin:8px 0 0">Valores &gt;20M excluidos, valor real pendiente de Siigo.</div>
       </div>
@@ -604,7 +631,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-tables-grid">
       <div class="card">
-        <div class="section-title">Últimas salidas</div>
+        <div class="section-title">Últimas salidas<span class="info" tabindex="0" data-info="Las últimas motos entregadas a sus dueños.">i</span></div>
         <div class="table-wrap mg-table-scroll">
           <table>
             <thead>
@@ -617,7 +644,7 @@ var cstSession = guard(["admin","manager","developer"]);
         </div>
       </div>
       <div class="card">
-        <div class="section-title">Por entregar</div>
+        <div class="section-title">Por entregar<span class="info der" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja, ordenadas por días de espera.">i</span></div>
         <div class="table-wrap mg-table-scroll">
           <table>
             <thead>
@@ -632,7 +659,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" id="mg-reingresos-card">
-      <div class="section-title">Posibles reingresos<span class="mg-reing-cnt" id="mg-reingresos-cnt"></span></div>
+      <div class="section-title">Posibles reingresos<span class="info" tabindex="0" data-info="Motos que volvieron a entrar en el mes. Revisa los comentarios y confirma si es el mismo problema.">i</span><span class="mg-reing-cnt" id="mg-reingresos-cnt"></span></div>
       <div class="table-wrap">
         <table class="mg-reing-tabla">
           <thead>
@@ -1435,6 +1462,23 @@ var cstSession = guard(["admin","manager","developer"]);
     }
   }
 
+  /* El enlace al menú solo lo ve developer; los demás roles entran directo a
+     su propio dashboard y no tienen a dónde volver. */
+  (function(){
+    const link = document.getElementById('link-menu');
+    if (link && cstSession && cstSession.rol === 'developer') link.style.display = 'inline-flex';
+  })();
+
+  /* Ícono de ayuda: el hover lo resuelve el CSS; este listener agrega el click
+     (necesario en móvil, donde no hay hover). Uno solo para toda la página. */
+  document.addEventListener('click', function(e){
+    const ico = e.target.closest ? e.target.closest('.info') : null;
+    document.querySelectorAll('.info.abierto').forEach(function(el){
+      if(el !== ico) el.classList.remove('abierto');
+    });
+    if(ico) ico.classList.toggle('abierto');
+  });
+
   function aplicarVisibilidadFuente() {
     const rol = cstSession && cstSession.rol;
     const toggle = document.getElementById('fuente-toggle');
@@ -1510,7 +1554,7 @@ var cstSession = guard(["admin","manager","developer"]);
     const n = reingresosPendientes.length;
     if(toastReingresosCerrado || n === 0){ toast.hidden = true; return; }
     document.getElementById('toast-reingresos-txt').textContent =
-      '⚠️ ' + n + (n === 1 ? ' posible reingreso por revisar' : ' posibles reingresos por revisar');
+      n + (n === 1 ? ' posible reingreso por revisar' : ' posibles reingresos por revisar');
     toast.hidden = false;
   }
 

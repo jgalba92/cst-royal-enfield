@@ -112,6 +112,23 @@
     .grupos section.grupo{margin-bottom:0;}
   }
 
+
+  /* Ícono de ayuda: círculo con "i" y tooltip al pasar el mouse o al tocarlo */
+  .info{display:inline-flex;align-items:center;justify-content:center;position:relative;
+    width:16px;height:16px;margin-left:6px;border-radius:50%;border:1px solid var(--line);
+    background:none;color:var(--muted);font-family:var(--sans);font-size:10px;font-weight:700;
+    font-style:normal;line-height:1;letter-spacing:0;text-transform:none;cursor:pointer;
+    vertical-align:middle;flex-shrink:0;-webkit-user-select:none;user-select:none;}
+  .info:hover,.info:focus,.info.abierto{color:var(--ink);border-color:var(--muted);}
+  .info::after{content:attr(data-info);position:absolute;bottom:calc(100% + 8px);left:50%;
+    transform:translateX(-50%);width:max-content;max-width:240px;padding:8px 10px;
+    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    font-size:11.5px;font-weight:500;line-height:1.45;letter-spacing:0;text-transform:none;
+    text-align:left;white-space:normal;box-shadow:0 6px 20px rgba(0,0,0,.45);
+    opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none;z-index:60;}
+  .info:hover::after,.info:focus::after,.info.abierto::after{opacity:1;visibility:visible;}
+  .info.der::after{left:auto;right:-6px;transform:none;}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
@@ -126,18 +143,18 @@
     </div>
 
     <div class="cards">
-      <div class="card pend"><div class="n" id="cnt-pendiente">—</div><div class="lbl">Por empezar</div></div>
+      <div class="card pend"><div class="n" id="cnt-pendiente">—</div><div class="lbl">Por empezar<span class="info" tabindex="0" data-info="Tus motos según en qué punto van: sin empezar, en reparación, o terminadas esperando que el cliente las recoja.">i</span></div></div>
       <div class="card trab"><div class="n" id="cnt-trabajo">—</div><div class="lbl">En trabajo</div></div>
       <div class="card listo"><div class="n" id="cnt-listas">—</div><div class="lbl">Por entregar</div></div>
     </div>
 
     <div class="ministats">
       <div class="mstat">
-        <div class="lbl">Más vieja</div>
+        <div class="lbl">Más vieja<span class="info" tabindex="0" data-info="La moto tuya que lleva más días en el taller. Conviene priorizarla.">i</span></div>
         <div class="v" id="mv-valor">—</div>
       </div>
       <div class="mstat">
-        <div class="lbl">Tu promedio</div>
+        <div class="lbl">Tu promedio<span class="info" tabindex="0" data-info="Cuántos días tardas en promedio en terminar una reparación.">i</span></div>
         <div class="v">—</div>
       </div>
     </div>
@@ -335,6 +352,17 @@ async function cargarTallerEstado(){
 }
 cargarTallerEstado();
 setInterval(cargarTallerEstado, 3600000);
+
+/* Ícono de ayuda: el hover lo resuelve el CSS; este listener agrega el click
+   (necesario en móvil, donde no hay hover). Uno solo para toda la página. */
+document.addEventListener('click', function(e){
+  var ico = e.target.closest ? e.target.closest('.info') : null;
+  document.querySelectorAll('.info.abierto').forEach(function(el){
+    if(el !== ico) el.classList.remove('abierto');
+  });
+  if(ico) ico.classList.toggle('abierto');
+});
+
 </script>
 </body>
 </html>
