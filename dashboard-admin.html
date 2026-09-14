@@ -189,7 +189,6 @@
         <select id="filtro-inconsistencia">
           <option value="">Todas</option>
           <option value="critica">Críticas</option>
-          <option value="revisar">Revisar</option>
           <option value="limpia">Limpias</option>
         </select>
       </div>
@@ -359,8 +358,7 @@ function parseFechaInput(valor){
 /* Misma clasificación que usa el Worker para "inconsistencias", pero
    aplicada aquí a cualquier orden de todas_ordenes para el filtro. */
 function clasificarInconsistencia(o){
-  if(o.tecnico === "Tecnico De" || o.valor_motokontrol > 20000000) return "critica";
-  if(o.valor_motokontrol >= 15000000 && o.valor_motokontrol <= 20000000) return "revisar";
+  if(o.tecnico === "Tecnico De") return "critica";
   return "limpia";
 }
 
