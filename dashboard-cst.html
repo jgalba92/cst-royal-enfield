@@ -601,9 +601,9 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-value" id="mg-ticket">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Facturado mes<span class="info" tabindex="0" data-info="Total facturado en el mes según Siigo (contabilidad).">i</span></div>
+        <div class="kpi-label">Facturado mes<span class="info" tabindex="0" data-info="Total facturado del mes (taller + accesorios), según Siigo. No incluye venta de motos.">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
-        <div class="kpi-sub">Siigo</div>
+        <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
       <div class="card">
         <div class="kpi-label">Tasa reingreso<span class="info" tabindex="0" data-info="De las motos que entraron este mes, qué porcentaje volvió por un problema similar.">i</span></div>
@@ -633,7 +633,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:12px">
-      <div class="section-title">Ventas mostrador<span class="info" tabindex="0" data-info="Ventas de repuestos hechas sin pasar por el taller.">i</span></div>
+      <div class="section-title">Ventas mostrador<span class="info" tabindex="0" data-info="Venta de accesorios/repuestos sin orden de taller.">i</span></div>
       <div id="mg-ventasMostrador">
         <div class="loading">Cargando…</div>
       </div>
@@ -1329,7 +1329,7 @@ var cstSession = guard(["admin","manager","developer"]);
           '<span class="l">total</span>' +
         '</div>' +
       '</div>' +
-      '<div class="mg-mostrador-nota">Ventas de repuestos sin pasar por taller.</div>';
+      '<div class="mg-mostrador-nota">Venta de accesorios/repuestos sin orden de taller.</div>';
   }
 
   /* Barras con el total de motos (activas + terminadas) por técnico,
@@ -1511,6 +1511,11 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-entregasMes').textContent = r.entregadas_mes ?? '—';
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
       document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
+      document.getElementById('mg-facturado-sub').innerHTML =
+        (mg.facturado_taller_mes != null || mg.facturado_accesorios_mes != null)
+          ? '<span class="tenue">Taller: ' + fmtPesos(mg.facturado_taller_mes ?? 0) +
+            ' · Accesorios: ' + fmtPesos(mg.facturado_accesorios_mes ?? 0) + '</span>'
+          : '<span class="tenue">Siigo</span>';
       // fmtDuracion espera {promedio_dias, promedio_horas}, que es justo la
       // forma de tiempo_promedio_taller.
       const tiempoTaller = mg.tiempo_promedio_taller || {};
