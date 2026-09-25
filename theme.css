@@ -1,0 +1,74 @@
+/* CST Royal Enfield — theme.css
+   Sistema de diseño compartido: superficies por luminancia, un solo acento
+   de marca (dorado), colores de estado semánticos, tipografía Inter +
+   JetBrains Mono. Solo custom properties y utilidades mínimas — cada
+   página conserva sus propios selectores de componente.
+   NO tocar: nombres de campos del Worker, IDs usados por JS, lógica. */
+
+:root{
+  /* Superficies, por luminancia. Sin box-shadow. */
+  --canvas: #0a0a0a;
+  --card: #141414;
+  --elevated: #1e1e1e;
+  --border: #313131;
+  --divider: #454545;
+
+  /* Texto */
+  --text: #ffffff;
+  --text-secondary: #a7a7a7;
+  --text-disabled: #7c7c7c;
+
+  /* Acento de marca — único, dorado. Solo íconos, KPIs, bordes activos,
+     links, series principales de Chart.js. Nunca como fondo grande. */
+  --accent: #C9A84C;
+  --accent-tint: rgba(201, 168, 76, .12);
+
+  /* Rojo de marca — SOLO logo/wordmark en header y login. Nunca en UI ni
+     como color de acción destructiva (eso es --c-critica). */
+  --brand-red: #C8102E;
+
+  /* Estados semánticos. Pills 4px radius, fondo fijo al 15%, texto del color. */
+  --c-pend: #3B82F6;
+  --c-trab: #A855F7;
+  --c-listo: #2ECC71;
+  --c-critica: #FF4D4D;
+  --c-revisar: #F97316;
+
+  /* Tipografía */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  /* Radios */
+  --radius-card: 8px;
+  --radius-pill: 4px;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+/* Eyebrow de sección: JetBrains Mono 12px uppercase, tracking .85px,
+   color secundario. Mismo tratamiento tipográfico que tickets, placas
+   y números de factura (esos quedan en el CSS de cada página). */
+.eyebrow{
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .85px;
+  color: var(--text-secondary);
+}
+
+/* Cuadrícula decorativa — SOLO login.html y header. Nunca detrás de
+   tablas ni gráficos. Se aplica con background-image, no cambia layout. */
+.bg-grid{
+  background-image:
+    linear-gradient(var(--elevated) 1px, transparent 1px),
+    linear-gradient(90deg, var(--elevated) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
