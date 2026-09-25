@@ -93,12 +93,18 @@
   tbody tr:hover{background:var(--panel-2);}
   tbody tr:last-child td{border-bottom:none;}
   td.placa{font-family:var(--mono);font-weight:700;}
+  td.ticket{font-family:var(--mono);color:var(--muted);}
   td.dias,th.dias,td.valor,th.valor{text-align:right;font-family:var(--mono);}
   td.valor .tenue{color:var(--muted);font-style:italic;}
+  td.valor .factura-sub{display:block;font-family:var(--sans);font-size:10.5px;color:var(--muted);
+    font-weight:400;margin-top:2px;}
   .estado-pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;}
   .estado-pill.pend{background:rgba(59,130,246,.15);color:var(--c-pend);}
   .estado-pill.trab{background:rgba(168,85,247,.15);color:var(--c-trab);}
   .estado-pill.listo{background:rgba(46,204,113,.15);color:var(--c-listo);}
+  .badge-verificar{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:99px;
+    font-weight:600;margin-left:6px;background:rgba(201,168,76,.18);color:var(--warn);
+    white-space:nowrap;}
 
   @media (max-width:640px){
     th,td{padding:8px 8px;font-size:11.5px;}
@@ -202,13 +208,13 @@
         <table id="tabla-ordenes">
           <thead>
             <tr id="tabla-head">
+              <th>Ticket</th>
               <th>Placa</th>
               <th>Técnico</th>
               <th>Estado</th>
               <th>Servicio</th>
               <th class="dias">Días</th>
-              <th class="valor">Valor MK</th>
-              <th class="valor">Valor Siigo</th>
+              <th class="valor">Valor</th>
             </tr>
           </thead>
           <tbody id="tabla-body">
@@ -385,29 +391,35 @@ function filtrarYOrdenar(){
     .sort((a,b) => (b.dias_en_taller ?? -1) - (a.dias_en_taller ?? -1));
 }
 
-/* Valor Siigo, tres casos distintos:
-     - no hay factura            -> "sin facturar"
-     - hay factura pero sin total -> "—"  (no es lo mismo que cero)
-     - hay factura con total      -> el valor, incluido $0 real
-   El estado lo decide el Worker con num_facturas, no el valor. */
-function celdaValorSiigo(o){
-  if(o.estado_factura !== "facturado") return '<span class="tenue">sin facturar</span>';
-  if(o.valor_siigo === null || o.valor_siigo === undefined) return '<span class="tenue">—</span>';
-  return fmtPesos(o.valor_siigo);
+/* Valor: sale de Siigo, nunca de Motokontrol (ese total viene inflado por un
+   factor variable y el Worker ya no lo manda para este rol). Sin factura
+   (valor_siigo null) se muestra "sin facturar"; con factura, el número de
+   factura va debajo en chico para poder ubicarla en Siigo. */
+function celdaValor(o){
+  if(o.valor_siigo === null || o.valor_siigo === undefined){
+    return '<span class="tenue">sin facturar</span>';
+  }
+  const factura = o.numero_factura
+    ? '<span class="factura-sub">' + o.numero_factura + '</span>'
+    : '';
+  return fmtPesos(o.valor_siigo) + factura;
 }
 
 function filaTabla(o){
   const info = ESTADO_INFO[o.estado] || { clase: "pend", label: o.estado || "—" };
   const dias = (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "—" : o.dias_en_taller;
+  const badge = o.facturada_sin_entregar
+    ? '<span class="badge-verificar">Facturada, verificar entrega</span>'
+    : '';
   return (
     '<tr>' +
+      '<td class="ticket">' + (o.ticket ?? "—") + '</td>' +
       '<td class="placa">' + (o.placa || "—") + '</td>' +
       '<td>' + (o.tecnico || "—") + '</td>' +
-      '<td><span class="estado-pill ' + info.clase + '">' + info.label + '</span></td>' +
+      '<td><span class="estado-pill ' + info.clase + '">' + info.label + '</span>' + badge + '</td>' +
       '<td>' + (o.servicio || "Sin descripción") + '</td>' +
       '<td class="dias">' + dias + '</td>' +
-      '<td class="valor">' + fmtPesos(o.valor_motokontrol) + '</td>' +
-      '<td class="valor">' + celdaValorSiigo(o) + '</td>' +
+      '<td class="valor">' + celdaValor(o) + '</td>' +
     '</tr>'
   );
 }
@@ -448,19 +460,21 @@ function celdaCSV(valor){
 
 function exportarCSV(){
   const filas = filtrarYOrdenar();
-  const encabezados = ["Placa","Técnico","Estado","Servicio","Días","Valor MK","Valor Siigo"];
+  const encabezados = ["Ticket","Placa","Técnico","Estado","Servicio","Días","Valor","Factura","Facturada sin entregar"];
 
   const lineas = [encabezados.map(celdaCSV).join(",")];
   filas.forEach(o => {
     const info = ESTADO_INFO[o.estado] || { label: o.estado || "—" };
     const fila = [
+      o.ticket ?? "",
       o.placa || "",
       o.tecnico || "",
       info.label,
       o.servicio || "",
       (o.dias_en_taller === null || o.dias_en_taller === undefined) ? "" : o.dias_en_taller,
-      o.valor_motokontrol ?? "",
-      o.estado_factura === "facturado" ? (o.valor_siigo ?? "") : "sin facturar",
+      (o.valor_siigo === null || o.valor_siigo === undefined) ? "sin facturar" : o.valor_siigo,
+      o.numero_factura ?? "",
+      o.facturada_sin_entregar ? "si" : "",
     ];
     lineas.push(fila.map(celdaCSV).join(","));
   });

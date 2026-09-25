@@ -7,8 +7,10 @@
 <script src="page-info.js?v=1"></script>
 <script src="sidebar.js?v=1"></script>
 <script>
-/* Guard de rol: admin, manager, developer */
-var cstSession = guard(["admin","manager","developer"]);
+/* Guard de rol: manager, developer. admin tiene su propio dashboard
+   (dashboard-admin.html) y ya no recibe el bloque manager completo del
+   Worker, así que esta página no es para ese rol. */
+var cstSession = guard(["manager","developer"]);
 </script>
 <title>Dashboard — CST Royal Enfield</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
