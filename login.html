@@ -251,32 +251,40 @@ async function entrarConClave(usuario, password){
   redirigir(session.rol);
 }
 
-/* Pantalla única: usuario + clave + Entrar. Si /login falla, puede ser
-   porque el usuario tiene un reset pendiente y no conoce su clave actual;
-   en ese caso lo mandamos a definir clave nueva en vez del error genérico. */
+/* Pantalla única: usuario + clave + Entrar. Antes de exigir la clave,
+   revisa si el usuario tiene reset pendiente (GET /check-reset); si lo
+   tiene, salta directo a definir clave nueva sin pedirle la vieja. */
 async function entrar(){
   ocultarError(errEl);
   const usuario = userEl.value.trim();
-  const password = passEl.value;
-  if(!usuario || !password){
-    mostrarError(errEl, "Escribe tu usuario y clave.");
+  if(!usuario){
+    mostrarError(errEl, "Escribe tu usuario.");
     return;
   }
   usuarioActual = usuario;
   btn.disabled = true;
   try{
-    await entrarConClave(usuario, password);
-  }catch(e){
+    let resetPendiente = false;
     try{
       const resChk = await fetch(API + "/check-reset?usuario=" + encodeURIComponent(usuario));
       const dataChk = await resChk.json();
-      if(dataChk.resetPendiente){
-        loginWrap.style.display = "none";
-        resetWrap.style.display = "block";
-        claveResetNueva.focus();
-        return;
-      }
-    }catch(e2){ /* si falla la verificación, cae al error normal de abajo */ }
+      resetPendiente = !!dataChk.resetPendiente;
+    }catch(e2){ /* si falla la verificación, sigue con el login normal */ }
+
+    if(resetPendiente){
+      loginWrap.style.display = "none";
+      resetWrap.style.display = "block";
+      claveResetNueva.focus();
+      return;
+    }
+
+    const password = passEl.value;
+    if(!password){
+      mostrarError(errEl, "Escribe tu clave.");
+      return;
+    }
+    await entrarConClave(usuario, password);
+  }catch(e){
     mostrarError(errEl, e.message);
   }finally{
     btn.disabled = false;
