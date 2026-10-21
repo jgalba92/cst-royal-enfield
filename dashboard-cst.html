@@ -7,10 +7,11 @@
 <script src="page-info.js?v=1"></script>
 <script src="sidebar.js?v=1"></script>
 <script>
-/* Guard de rol: manager, developer. admin tiene su propio dashboard
-   (dashboard-admin.html) y ya no recibe el bloque manager completo del
-   Worker, así que esta página no es para ese rol. */
-var cstSession = guard(["manager","developer"]);
+/* Guard de rol: manager, developer, admin.
+   admin SÍ entra al dashboard gerencial, pero NO ve la sección de
+   reingresos (se oculta vía esAdmin más abajo). */
+var cstSession = guard(["admin","manager","developer"]);
+    var esAdmin = cstSession && (cstSession.rol || cstSession.role) === "admin";
 </script>
 <title>Dashboard — CST Royal Enfield</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -1808,6 +1809,7 @@ var cstSession = guard(["manager","developer"]);
   }
 
   async function cargarReingresos(){
+    if (esAdmin) { return; }
     const cuerpo = document.getElementById('mg-reingresos');
     try {
       const res = await authFetch(`${WORKER_URL}/reingresos`);
@@ -1841,7 +1843,14 @@ var cstSession = guard(["manager","developer"]);
   });
 
   cargarVisionGeneral();
-  cargarReingresos();
+  if (esAdmin) {
+    var cardReing = document.getElementById('mg-reingresos-card');
+    if (cardReing) cardReing.hidden = true;
+    var toastReing = document.getElementById('toast-reingresos');
+    if (toastReing) toastReing.hidden = true;
+  } else {
+    cargarReingresos();
+  }
   setInterval(cargarVisionGeneral, 3600000);
 
   // ── PANEL CHAT ─────────────────────────────────────────────────────────
