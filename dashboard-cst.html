@@ -633,7 +633,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-value" id="mg-entregasMes">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Tiempo promedio en taller<span class="info der" tabindex="0" data-info="Días promedio que una moto pasa en el taller, desde que entra hasta que se entrega.">i</span></div>
+        <div class="kpi-label">Tiempo promedio en taller<span class="info der" tabindex="0" data-info="Días promedio que una moto pasa en el taller, desde que entra hasta que se entrega. Solo hay datos desde septiembre de 2026.">i</span></div>
         <div class="kpi-value gold" id="mg-tiempoTaller">—</div>
         <div class="kpi-sub" id="mg-tiempoTaller-sub"></div>
       </div>
@@ -704,6 +704,7 @@ var cstSession = guard(["admin","manager","developer"]);
       <div class="mg-servicios-list" id="mg-cuello">
         <div class="loading">Cargando…</div>
       </div>
+      <div class="mg-note" style="margin:10px 0 0">Datos disponibles desde septiembre de 2026, cuando empezó el registro de cambios de estado.</div>
     </div>
 
     <div class="card" style="margin-bottom:20px">
@@ -1653,7 +1654,7 @@ var cstSession = guard(["admin","manager","developer"]);
         muestrasTaller ? fmtDuracion(tiempoTaller) : '—';
       document.getElementById('mg-tiempoTaller-sub').innerHTML = muestrasTaller
         ? '<span class="tenue">(' + (muestrasTaller === 1 ? '1 moto' : muestrasTaller + ' motos') + ')</span>'
-        : '<span class="tenue">Aún acumulando datos</span>';
+        : '<span class="tenue">Sin datos en el período (registro desde sep 2026)</span>';
 
       const tasaReingreso = mg.tasa_reingreso;
       document.getElementById('mg-reingreso').textContent =
