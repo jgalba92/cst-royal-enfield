@@ -319,13 +319,19 @@ var cstSession = guard(["admin","manager","developer"]);
   .mg-corbeta-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 16px; }
   .mg-corbeta-info { font-size: 12px; color: var(--text-muted); }
   .mg-corbeta-info strong { color: var(--text); }
+  .mg-periodo { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .mg-periodo .filter-field { min-width: 140px; }
+  .mg-periodo-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; padding: 9px 14px; border-radius: 8px; cursor: pointer; }
+  .mg-periodo-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .mg-periodo-txt { font-size: 12px; color: var(--text-muted); align-self: center; }
 
   /* ── VISIÓN GENERAL (Motokontrol / manager) ── */
   .mg-note { font-size: 11px; color: var(--text-muted); margin: -10px 0 18px; }
 
   .mg-kpis {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
     margin-bottom: 12px;
   }
@@ -583,6 +589,22 @@ var cstSession = guard(["admin","manager","developer"]);
   <!-- ═══ VISIÓN GENERAL (Motokontrol) ═══ -->
   <div id="motokontrol-section">
 
+    <div class="mg-periodo">
+      <div class="filter-field">
+        <label for="mg-desde">Desde</label>
+        <input type="date" id="mg-desde">
+      </div>
+      <div class="filter-field">
+        <label for="mg-hasta">Hasta</label>
+        <input type="date" id="mg-hasta">
+      </div>
+      <button type="button" class="mg-periodo-btn" onclick="aplicarPeriodo()">Aplicar</button>
+      <button type="button" class="mg-periodo-btn" onclick="periodoRapido('mes')">Este mes</button>
+      <button type="button" class="mg-periodo-btn" onclick="periodoRapido('anio')">2026</button>
+      <button type="button" class="mg-periodo-btn" onclick="periodoRapido('')">Limpiar</button>
+      <span class="mg-periodo-txt" id="mg-periodo-txt">Sin rango: estado actual y mes en curso</span>
+    </div>
+
     <div class="mg-corbeta-bar">
       <div class="fuente-toggle" role="group" aria-label="Colombiana de Comercio">
         <button type="button" id="btn-corbeta-excluir" class="fuente-btn active" onclick="setCorbeta(false)">Sin Colombiana de Comercio</button>
@@ -602,7 +624,12 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-value red" id="mg-pendientes24h">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Entregadas mes<span class="info" tabindex="0" data-info="Motos entregadas a sus dueños este mes.">i</span></div>
+        <div class="kpi-label"><span id="mg-ingresadas-lbl">Ingresadas mes</span><span class="info" tabindex="0" data-info="Órdenes que entraron al taller en el período (sin anuladas), estén o no entregadas.">i</span></div>
+        <div class="kpi-value" id="mg-ingresadas">—</div>
+        <div class="kpi-sub" id="mg-ingresadas-sub"></div>
+      </div>
+      <div class="card">
+        <div class="kpi-label"><span id="mg-entregas-lbl">Entregadas mes</span><span class="info" tabindex="0" data-info="Motos entregadas a sus dueños en el período, según la fecha de entrega de Motokontrol.">i</span></div>
         <div class="kpi-value" id="mg-entregasMes">—</div>
       </div>
       <div class="card">
@@ -618,7 +645,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-value" id="mg-ticket">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Facturado mes<span class="info" tabindex="0" data-info="Total facturado del mes (taller + accesorios), según Siigo. No incluye venta de motos.">i</span></div>
+        <div class="kpi-label"><span id="mg-facturado-lbl">Facturado mes</span><span class="info" tabindex="0" data-info="Total facturado del mes (taller + accesorios), según Siigo. No incluye venta de motos.">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
         <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
@@ -1556,6 +1583,41 @@ var cstSession = guard(["admin","manager","developer"]);
   /* Colombiana de Comercio: excluida por defecto. Cambiar el toggle recarga
      desde el Worker porque los conteos se calculan allá. */
   let incluirCorbeta = false;
+
+  /* Período: sin fechas el Worker devuelve estado actual + mes en curso. */
+  let periodo = null; // { desde, hasta } o null
+  function hoyBogota(){
+    return new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+  }
+  function aplicarPeriodo(){
+    const d = document.getElementById('mg-desde').value;
+    const h = document.getElementById('mg-hasta').value;
+    if((d && !h) || (h && !d)){ showToast('Elige desde y hasta', true); return; }
+    if(d && d > h){ showToast('La fecha desde no puede ser posterior a hasta', true); return; }
+    periodo = d ? { desde: d, hasta: h } : null;
+    document.getElementById('mg-periodo-txt').textContent = periodo
+      ? 'Mostrando ' + periodo.desde + ' a ' + periodo.hasta
+      : 'Sin rango: estado actual y mes en curso';
+    document.getElementById('mg-ingresadas-lbl').textContent = periodo ? 'Ingresadas' : 'Ingresadas mes';
+    document.getElementById('mg-entregas-lbl').textContent = periodo ? 'Entregadas' : 'Entregadas mes';
+    document.getElementById('mg-facturado-lbl').textContent = periodo ? 'Facturado' : 'Facturado mes';
+    cargarVisionGeneral();
+  }
+  function periodoRapido(cual){
+    const hoy = hoyBogota();
+    const desde = cual === 'mes' ? hoy.slice(0, 8) + '01' : cual === 'anio' ? hoy.slice(0, 4) + '-01-01' : '';
+    document.getElementById('mg-desde').value = desde;
+    document.getElementById('mg-hasta').value = desde ? hoy : '';
+    aplicarPeriodo();
+  }
+  function paramsTaller(){
+    const p = new URLSearchParams();
+    if(incluirCorbeta) p.set('corbeta', 'incluir');
+    if(periodo){ p.set('desde', periodo.desde); p.set('hasta', periodo.hasta); }
+    const q = p.toString();
+    return q ? '?' + q : '';
+  }
+
   function setCorbeta(incluir){
     incluirCorbeta = incluir;
     document.getElementById('btn-corbeta-excluir').classList.toggle('active', !incluir);
@@ -1565,7 +1627,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
   async function cargarVisionGeneral() {
     try {
-      const res = await authFetch(`${WORKER_URL}/taller-estado` + (incluirCorbeta ? '?corbeta=incluir' : ''));
+      const res = await authFetch(`${WORKER_URL}/taller-estado` + paramsTaller());
       const data = await res.json();
       const r = data.resumen || {};
       const mg = data.manager || {};
@@ -1573,6 +1635,9 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-enTaller').textContent = r.en_taller ?? '—';
       document.getElementById('mg-pendientes24h').textContent = mg.pendientes_mas_24h ?? '—';
       document.getElementById('mg-entregasMes').textContent = r.entregadas_mes ?? '—';
+      document.getElementById('mg-ingresadas').textContent = r.ingresadas ?? '—';
+      document.getElementById('mg-ingresadas-sub').innerHTML = r.ingresadas_placas != null
+        ? '<span class="tenue">' + r.ingresadas_placas + ' placas distintas</span>' : '';
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
       document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
       document.getElementById('mg-facturado-sub').innerHTML =
@@ -1622,6 +1687,8 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-enTaller').textContent = '—';
       document.getElementById('mg-pendientes24h').textContent = '—';
       document.getElementById('mg-entregasMes').textContent = '—';
+      document.getElementById('mg-ingresadas').textContent = '—';
+      document.getElementById('mg-ingresadas-sub').innerHTML = '';
       document.getElementById('mg-ticket').textContent = '—';
       document.getElementById('mg-facturado').textContent = '$—';
       document.getElementById('mg-tiempoTaller').textContent = '—';
