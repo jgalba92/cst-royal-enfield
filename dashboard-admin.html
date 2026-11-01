@@ -106,6 +106,15 @@
   .badge-verificar{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:var(--radius-pill);
     font-weight:600;margin-left:6px;background:rgba(249,115,22,.15);color:var(--c-revisar);
     white-space:nowrap;}
+  .badge-corbeta{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:var(--radius-pill);
+    font-weight:600;margin-left:6px;background:var(--elevated);color:var(--text-secondary);white-space:nowrap;}
+
+  /* Colombiana de Comercio (Corbeta): por defecto fuera de los conteos. */
+  .seg{display:inline-flex;background:var(--elevated);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;margin:-8px 0 18px;max-width:100%;flex-wrap:wrap;}
+  .seg button{background:none;border:none;color:var(--text-secondary);font-family:var(--font-sans);
+    font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;}
+  .seg button.on{background:var(--accent);color:#fff;}
+  .kpi .sub{font-size:12px;color:var(--text-secondary);margin-top:4px;}
 
   @media (max-width:640px){
     th,td{padding:8px 8px;font-size:11.5px;}
@@ -145,10 +154,16 @@
     </div>
     <div class="refresh-note">Actualiza cada hora.</div>
 
+    <div class="seg" role="group" aria-label="Colombiana de Comercio">
+      <button type="button" id="btn-corbeta-excluir" class="on">Sin Colombiana de Comercio</button>
+      <button type="button" id="btn-corbeta-incluir">Con Colombiana de Comercio</button>
+    </div>
+
     <div class="kpis">
       <div class="kpi"><div class="label">En taller<span class="info" tabindex="0" data-info="Total de motos que están en el taller ahora mismo (sin entregar).">i</span></div><div class="val" id="kpi-entaller">—</div></div>
       <div class="kpi"><div class="label">Trabajando<span class="info" tabindex="0" data-info="Motos que se están reparando en este momento.">i</span></div><div class="val" id="kpi-trabajando">—</div></div>
       <div class="kpi"><div class="label">Por entregar<span class="info" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja.">i</span></div><div class="val" id="kpi-terminadas">—</div></div>
+      <div class="kpi"><div class="label">Colombiana de Comercio<span class="info der" tabindex="0" data-info="Motos de Corbeta (importador de Royal Enfield) abiertas en el taller. Tardan en pagar y cerrar tickets, por eso se muestran aparte.">i</span></div><div class="val" id="kpi-corbeta">—</div><div class="sub" id="kpi-corbeta-sub"></div></div>
       <div class="kpi bad"><div class="label">Críticas<span class="info der" tabindex="0" data-info="Órdenes con algo inusual que conviene revisar en Motokontrol.">i</span></div><div class="val" id="kpi-criticas">—</div></div>
     </div>
 
@@ -187,6 +202,13 @@
           <option value="Pendiente">Por empezar</option>
           <option value="En Atención">En trabajo</option>
           <option value="Atendido">Por entregar</option>
+        </select>
+      </div>
+      <div class="filtro-campo">
+        <label for="filtro-antiguedad">Antigüedad</label>
+        <select id="filtro-antiguedad">
+          <option value="">Todas</option>
+          <option value="30">Más de 30 días</option>
         </select>
       </div>
       <div class="filtro-campo">
@@ -371,6 +393,7 @@ function filtrarYOrdenar(){
   const tecnicoSel = document.getElementById("filtro-tecnico").value;
   const estadoSel = document.getElementById("filtro-estado").value;
   const inconsistenciaSel = document.getElementById("filtro-inconsistencia").value;
+  const antiguedadSel = Number(document.getElementById("filtro-antiguedad").value || 0);
   const desde = parseFechaInput(document.getElementById("filtro-desde").value);
   const hasta = parseFechaInput(document.getElementById("filtro-hasta").value);
 
@@ -378,6 +401,7 @@ function filtrarYOrdenar(){
     .filter(o => !tecnicoSel || o.tecnico === tecnicoSel)
     .filter(o => !estadoSel || o.estado === estadoSel)
     .filter(o => !inconsistenciaSel || clasificarInconsistencia(o) === inconsistenciaSel)
+    .filter(o => !antiguedadSel || (o.dias_en_taller ?? 0) > antiguedadSel)
     .filter(o => {
       if(!desde && !hasta) return true;
       const fecha = fechaIngresoReal(o.fecha_ingreso);
@@ -410,10 +434,11 @@ function filaTabla(o){
   const badge = o.facturada_sin_entregar
     ? '<span class="badge-verificar">Facturada, verificar entrega</span>'
     : '';
+  const corbeta = o.es_corbeta ? '<span class="badge-corbeta">Col. Comercio</span>' : '';
   return (
     '<tr>' +
       '<td class="ticket">' + (o.ticket ?? "—") + '</td>' +
-      '<td class="placa">' + (o.placa || "—") + '</td>' +
+      '<td class="placa">' + (o.placa || "—") + corbeta + '</td>' +
       '<td>' + (o.tecnico || "—") + '</td>' +
       '<td><span class="estado-pill ' + info.clase + '">' + info.label + '</span>' + badge + '</td>' +
       '<td>' + (o.servicio || "Sin descripción") + '</td>' +
@@ -459,7 +484,7 @@ function celdaCSV(valor){
 
 function exportarCSV(){
   const filas = filtrarYOrdenar();
-  const encabezados = ["Ticket","Placa","Técnico","Estado","Servicio","Días","Valor","Factura","Facturada sin entregar"];
+  const encabezados = ["Ticket","Placa","Técnico","Estado","Servicio","Días","Valor","Factura","Facturada sin entregar","Colombiana de Comercio"];
 
   const lineas = [encabezados.map(celdaCSV).join(",")];
   filas.forEach(o => {
@@ -474,6 +499,7 @@ function exportarCSV(){
       (o.valor_siigo === null || o.valor_siigo === undefined) ? "sin facturar" : o.valor_siigo,
       o.numero_factura ?? "",
       o.facturada_sin_entregar ? "si" : "",
+      o.es_corbeta ? "si" : "",
     ];
     lineas.push(fila.map(celdaCSV).join(","));
   });
@@ -495,11 +521,24 @@ document.getElementById("filtro-estado").addEventListener("change", renderTabla)
 document.getElementById("filtro-inconsistencia").addEventListener("change", renderTabla);
 document.getElementById("filtro-desde").addEventListener("change", renderTabla);
 document.getElementById("filtro-hasta").addEventListener("change", renderTabla);
+document.getElementById("filtro-antiguedad").addEventListener("change", renderTabla);
 document.getElementById("btn-exportar").addEventListener("click", exportarCSV);
+
+/* Colombiana de Comercio: excluida por defecto. Cambiar el toggle recarga
+   desde el Worker porque los conteos se calculan allá. */
+let incluirCorbeta = false;
+function setCorbeta(incluir){
+  incluirCorbeta = incluir;
+  document.getElementById("btn-corbeta-excluir").classList.toggle("on", !incluir);
+  document.getElementById("btn-corbeta-incluir").classList.toggle("on", incluir);
+  cargarTallerEstado();
+}
+document.getElementById("btn-corbeta-excluir").addEventListener("click", () => setCorbeta(false));
+document.getElementById("btn-corbeta-incluir").addEventListener("click", () => setCorbeta(true));
 
 async function cargarTallerEstado(){
   try{
-    const res = await authFetch(API + "/taller-estado");
+    const res = await authFetch(API + "/taller-estado" + (incluirCorbeta ? "?corbeta=incluir" : ""));
     const data = await res.json();
     const r = data.resumen || {};
 
@@ -507,6 +546,10 @@ async function cargarTallerEstado(){
     document.getElementById("kpi-trabajando").textContent = r.trabajando ?? "—";
     document.getElementById("kpi-terminadas").textContent = r.terminadas ?? "—";
     document.getElementById("kpi-criticas").textContent = data.criticas ?? 0;
+    const cb = data.corbeta || {};
+    document.getElementById("kpi-corbeta").textContent = cb.abiertas ?? "—";
+    document.getElementById("kpi-corbeta-sub").textContent =
+      (cb.mas_30d ?? 0) + " con +30 días" + (cb.incluida ? " · incluidas" : " · fuera de conteos");
 
     const mg = data.manager || {};
     cuelloGeneral = mg.tiempo_por_estado || [];
@@ -524,6 +567,8 @@ async function cargarTallerEstado(){
     document.getElementById("kpi-trabajando").textContent = "—";
     document.getElementById("kpi-terminadas").textContent = "—";
     document.getElementById("kpi-criticas").textContent = "—";
+    document.getElementById("kpi-corbeta").textContent = "—";
+    document.getElementById("kpi-corbeta-sub").textContent = "";
     document.getElementById("carga-tecnico").innerHTML = '<div class="empty">No se pudo cargar.</div>';
     document.getElementById("cuello-barras").innerHTML = '<div class="empty">No se pudo cargar.</div>';
     document.getElementById("contador-filtro").textContent = "";

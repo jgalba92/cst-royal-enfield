@@ -315,6 +315,11 @@ var cstSession = guard(["admin","manager","developer"]);
   }
   .fuente-btn.active { background: var(--red); color: white; }
 
+  /* Colombiana de Comercio (Corbeta): por defecto fuera de los conteos. */
+  .mg-corbeta-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 16px; }
+  .mg-corbeta-info { font-size: 12px; color: var(--text-muted); }
+  .mg-corbeta-info strong { color: var(--text); }
+
   /* ── VISIÓN GENERAL (Motokontrol / manager) ── */
   .mg-note { font-size: 11px; color: var(--text-muted); margin: -10px 0 18px; }
 
@@ -578,6 +583,15 @@ var cstSession = guard(["admin","manager","developer"]);
   <!-- ═══ VISIÓN GENERAL (Motokontrol) ═══ -->
   <div id="motokontrol-section">
 
+    <div class="mg-corbeta-bar">
+      <div class="fuente-toggle" role="group" aria-label="Colombiana de Comercio">
+        <button type="button" id="btn-corbeta-excluir" class="fuente-btn active" onclick="setCorbeta(false)">Sin Colombiana de Comercio</button>
+        <button type="button" id="btn-corbeta-incluir" class="fuente-btn" onclick="setCorbeta(true)">Con Colombiana de Comercio</button>
+      </div>
+      <span class="mg-corbeta-info" id="mg-corbeta-info"></span>
+      <span class="info" tabindex="0" data-info="Motos de Corbeta (importador de Royal Enfield). Tardan en pagar y cerrar tickets, por eso por defecto quedan fuera de los conteos.">i</span>
+    </div>
+
     <div class="mg-kpis">
       <div class="card">
         <div class="kpi-label">En taller<span class="info" tabindex="0" data-info="Total de motos que están en el taller ahora mismo (sin entregar).">i</span></div>
@@ -662,6 +676,20 @@ var cstSession = guard(["admin","manager","developer"]);
       </div>
       <div class="mg-servicios-list" id="mg-cuello">
         <div class="loading">Cargando…</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="section-title">Abiertas más de 30 días<span class="info" tabindex="0" data-info="Órdenes sin cerrar que llevan más de un mes en Motokontrol. Revisar si la moto sigue en el taller o si quedó sin cerrar el ticket.">i</span><span class="mg-reing-cnt" id="mg-viejas-cnt"></span></div>
+      <div class="table-wrap mg-table-scroll">
+        <table>
+          <thead>
+            <tr><th>Ticket</th><th>Placa</th><th>Técnico</th><th>Estado</th><th>Días</th></tr>
+          </thead>
+          <tbody id="mg-viejas">
+            <tr><td colspan="5" class="loading">Cargando…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -1502,9 +1530,42 @@ var cstSession = guard(["admin","manager","developer"]);
     )).join('');
   }
 
+  const ESTADO_LABEL = { 'Pendiente': 'Por empezar', 'En Atención': 'En trabajo', 'Atendido': 'Por entregar' };
+  function renderAbiertasViejas(ordenes){
+    const tbody = document.getElementById('mg-viejas');
+    const viejas = (ordenes || [])
+      .filter(o => (o.dias_en_taller ?? 0) > 30)
+      .sort((a, b) => (b.dias_en_taller ?? 0) - (a.dias_en_taller ?? 0));
+    document.getElementById('mg-viejas-cnt').textContent = viejas.length ? viejas.length : '';
+    if(!viejas.length){
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">Ninguna orden abierta con más de 30 días</td></tr>';
+      return;
+    }
+    tbody.innerHTML = viejas.map(o => (
+      '<tr>' +
+        '<td>' + escHtml(o.ticket ?? '—') + '</td>' +
+        '<td><strong>' + escHtml(o.placa || '—') + '</strong>' +
+          (o.es_corbeta ? ' <span class="badge badge-muted">Col. Comercio</span>' : '') + '</td>' +
+        '<td>' + escHtml(o.tecnico || '—') + '</td>' +
+        '<td>' + escHtml(ESTADO_LABEL[o.estado] || o.estado || '—') + '</td>' +
+        '<td>' + o.dias_en_taller + '</td>' +
+      '</tr>'
+    )).join('');
+  }
+
+  /* Colombiana de Comercio: excluida por defecto. Cambiar el toggle recarga
+     desde el Worker porque los conteos se calculan allá. */
+  let incluirCorbeta = false;
+  function setCorbeta(incluir){
+    incluirCorbeta = incluir;
+    document.getElementById('btn-corbeta-excluir').classList.toggle('active', !incluir);
+    document.getElementById('btn-corbeta-incluir').classList.toggle('active', incluir);
+    cargarVisionGeneral();
+  }
+
   async function cargarVisionGeneral() {
     try {
-      const res = await authFetch(`${WORKER_URL}/taller-estado`);
+      const res = await authFetch(`${WORKER_URL}/taller-estado` + (incluirCorbeta ? '?corbeta=incluir' : ''));
       const data = await res.json();
       const r = data.resumen || {};
       const mg = data.manager || {};
@@ -1549,6 +1610,12 @@ var cstSession = guard(["admin","manager","developer"]);
       renderValorPorDia(mg.valor_por_dia || []);
       renderUltimasSalidas(mg.ultimas_salidas || []);
       renderListasEntrega(data.listas_entrega || []);
+      renderAbiertasViejas(data.todas_ordenes || []);
+
+      const cb = data.corbeta || {};
+      document.getElementById('mg-corbeta-info').innerHTML =
+        'Colombiana de Comercio: <strong>' + (cb.abiertas ?? 0) + '</strong> abiertas · ' +
+        (cb.mas_30d ?? 0) + ' con +30 días' + (cb.incluida ? ' (incluidas en los conteos)' : '');
 
       document.getElementById('mg-error').style.display = 'none';
     } catch (err) {
@@ -1569,6 +1636,8 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-cuello').innerHTML = '<div class="loading">No se pudo cargar</div>';
       document.getElementById('mg-ultimasSalidas').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
       document.getElementById('mg-listasEntrega').innerHTML = '<tr><td colspan="3" class="loading">No se pudo cargar</td></tr>';
+      document.getElementById('mg-viejas').innerHTML = '<tr><td colspan="5" class="loading">No se pudo cargar</td></tr>';
+      document.getElementById('mg-corbeta-info').textContent = '';
       document.getElementById('mg-error').style.display = 'block';
     }
   }
