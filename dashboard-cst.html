@@ -7,9 +7,7 @@
 <script src="page-info.js?v=1"></script>
 <script src="sidebar.js?v=1"></script>
 <script>
-/* Guard de rol: manager, developer, admin.
-   admin SÍ entra al dashboard gerencial, pero NO ve la sección de
-   reingresos (se oculta vía esAdmin más abajo). */
+/* Guard de rol: manager, developer, admin. */
 var cstSession = guard(["admin","manager","developer"]);
     var esAdmin = cstSession && (cstSession.rol || cstSession.role) === "admin";
 </script>
@@ -438,125 +436,10 @@ var cstSession = guard(["admin","manager","developer"]);
      y no se sale de la pantalla. */
   .info.der::after { left: auto; right: -6px; transform: none; }
 
-  /* Aviso flotante de reingresos por revisar */
-  .toast-reingresos {
-    position: fixed; top: 18px; right: 18px; z-index: 999;
-    display: flex; align-items: center; gap: 10px;
-    max-width: 330px; padding: 12px 14px;
-    background: var(--card); color: var(--text);
-    border: 1px solid var(--gold); border-left: 4px solid var(--gold);
-    border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-    font-size: 13px; font-weight: 600; line-height: 1.35; cursor: pointer;
-  }
-  /* display:flex le gana al atributo hidden, hay que apagarlo a mano */
-  .toast-reingresos[hidden] { display: none; }
-  .toast-reingresos .ico { flex-shrink: 0; }
-  .toast-reingresos .txt { flex: 1; min-width: 0; }
-  .toast-reingresos .cerrar {
-    flex-shrink: 0; background: none; border: none; color: var(--text-muted);
-    font-size: 14px; line-height: 1; padding: 2px 4px; cursor: pointer;
-    font-family: inherit;
-  }
-  .toast-reingresos .cerrar:hover { color: var(--text); }
-
-  /* Tabla de posibles reingresos */
   .mg-reing-cnt { color: var(--gold); font-weight: 700; margin-left: 6px; }
-  .mg-reing-tabla th:nth-child(1), .mg-reing-tabla td:nth-child(1) { width: 11%; }
-  .mg-reing-tabla th:nth-child(2), .mg-reing-tabla td:nth-child(2) { width: 25%; }
-  .mg-reing-tabla th:nth-child(3), .mg-reing-tabla td:nth-child(3) { width: 12%; }
-  .mg-reing-tabla th:nth-child(4), .mg-reing-tabla td:nth-child(4) { width: 25%; }
-  .mg-reing-tabla th:nth-child(5), .mg-reing-tabla td:nth-child(5) { width: 12%; }
-  .mg-reing-tabla th:nth-child(6), .mg-reing-tabla td:nth-child(6) { width: 15%; }
-  .mg-reing-tabla th[data-col] { cursor: pointer; -webkit-user-select: none; user-select: none; }
-  .mg-reing-tabla th[data-col]:hover { color: var(--text); }
-  .mg-reing-tabla th.activa { color: var(--text); }
-  /* La flecha ocupa su lugar desde el principio, aunque esté vacía, para que
-     el encabezado no salte al cambiar de columna. */
-  .mg-reing-tabla th .flecha { display: inline-block; width: 10px; margin-left: 4px; }
-  .mg-reing-tabla tr.grupo-placa td {
-    background: var(--input-bg);
-    padding: 8px 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .mg-reing-tabla tr.grupo-placa .placa {
-    font-weight: 700; color: var(--text); letter-spacing: 0.02em;
-  }
-  .mg-reing-tabla tr.grupo-placa .cuenta {
-    color: var(--text-muted); font-size: 12px; margin-left: 6px; font-weight: 500;
-  }
-  .mg-reing-tabla td.coment { white-space: normal; overflow-wrap: break-word; color: var(--text-muted); }
-  .mg-reing-tabla td.acc { text-align: right; white-space: nowrap; }
-  .mg-reing-tabla td.err { color: var(--error); font-size: 11.5px; font-weight: 600; }
-  .btn-reing {
-    border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
-    border-radius: 7px; padding: 5px 12px; font-size: 12px; font-weight: 600;
-    cursor: pointer; font-family: inherit;
-  }
-  .btn-reing + .btn-reing { margin-left: 6px; }
-  .btn-reing.si { border-color: var(--success); color: var(--success); }
-  .btn-reing.si:hover:not([disabled]) { background: rgba(46,204,113,0.15); }
-  .btn-reing.no:hover:not([disabled]) { border-color: var(--text-muted); }
-  .btn-reing[disabled] { opacity: 0.45; cursor: default; }
-
-  @media (max-width: 900px) {
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .charts-grid { grid-template-columns: 1fr; }
-    .mg-kpis { grid-template-columns: repeat(2, 1fr); }
-    .mg-charts-grid { grid-template-columns: 1fr; }
-    .mg-tables-grid { grid-template-columns: 1fr; }
-  }
-
-  @media (max-width: 560px) {
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-    .filters-row { flex-direction: column; }
-    .kpi-value { font-size: 22px; }
-    .mg-kpis { grid-template-columns: 1fr 1fr; }
-  }
-
-  @media (max-width: 360px) {
-    .kpi-grid { grid-template-columns: 1fr; }
-    .mg-kpis { grid-template-columns: 1fr; }
-  }
-
-  /* TOAST */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--success);
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 12px 24px;
-    border-radius: 999px;
-    transition: transform 0.3s ease;
-    z-index: 999;
-    white-space: nowrap;
-  }
-
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.error { background: var(--error); }
-
-  /* LOADING */
-  .loading {
-    font-size: 13px;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 20px;
-  }
-
-  @media (prefers-reduced-motion: reduce) { *{ transition: none !important; } }
 </style>
 </head>
 <body>
-
-<!-- Aviso de reingresos por revisar; se llena desde cargarReingresos() -->
-<div class="toast-reingresos" id="toast-reingresos" hidden>
-  <span class="ico">⚠️</span>
-  <span class="txt" id="toast-reingresos-txt"></span>
-  <button class="cerrar" id="toast-reingresos-cerrar" title="Cerrar aviso" aria-label="Cerrar aviso">✕</button>
-</div>
 
 <div class="container">
 
@@ -573,7 +456,7 @@ var cstSession = guard(["admin","manager","developer"]);
       <span id="clockDate"></span>
       <span id="lastUpdate" style="display:none;font-size:11px;color:var(--text-muted);margin-top:4px;display:block"></span>
     </div>
-    <button onclick="loadData(); cargarVisionGeneral(); cargarReingresos();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
+    <button onclick="loadData(); cargarVisionGeneral();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
   </div>
 
   <div class="mg-note">Actualiza cada hora.</div>
@@ -650,7 +533,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
       <div class="card">
-        <div class="kpi-label">Tasa reingreso<span class="info" tabindex="0" data-info="De las motos que entraron este mes, qué porcentaje volvió por un problema similar.">i</span></div>
+        <div class="kpi-label">Tasa reingreso<span class="info" tabindex="0" data-info="Órdenes marcadas como &quot;retorno taller&quot; en Motokontrol sobre las órdenes que entraron en el período. El reingreso se asigna al técnico de la orden anterior de esa placa.">i</span></div>
         <div class="kpi-value" id="mg-reingreso">—</div>
         <div class="kpi-sub" id="mg-reingreso-sub"></div>
       </div>
@@ -747,27 +630,6 @@ var cstSession = guard(["admin","manager","developer"]);
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
-
-    <div class="card" id="mg-reingresos-card">
-      <div class="section-title">Posibles reingresos<span class="info" tabindex="0" data-info="Motos que volvieron a entrar en el mes. Revisa los comentarios y confirma si es el mismo problema.">i</span><span class="mg-reing-cnt" id="mg-reingresos-cnt"></span></div>
-      <div class="table-wrap">
-        <table class="mg-reing-tabla">
-          <thead>
-            <tr id="mg-reing-head">
-              <th data-col="placa">Placa<span class="flecha"></span></th>
-              <th data-col="comentario_1">Comentario 1<span class="flecha"></span></th>
-              <th data-col="fecha_1">Fecha 1<span class="flecha"></span></th>
-              <th data-col="comentario_2">Comentario 2<span class="flecha"></span></th>
-              <th data-col="fecha_2">Fecha 2<span class="flecha"></span></th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="mg-reingresos">
-            <tr><td colspan="6" class="loading">Cargando…</td></tr>
-          </tbody>
-        </table>
       </div>
     </div>
 
@@ -1778,216 +1640,14 @@ var cstSession = guard(["admin","manager","developer"]);
   setInterval(updateClock, 60000);
   setInterval(loadData, 300000);
   loadData();
-  // ── REINGRESOS ─────────────────────────────────────────────────────────
-  // El Worker propone pares de órdenes de la misma placa en el mismo mes; aquí
-  // el manager confirma cuáles fueron de verdad un reingreso.
-  let reingresosPendientes = [];
-  let toastReingresosCerrado = false; // se mantiene mientras dure la página
-
-  /* Los comentarios vienen de Motokontrol y son texto libre: un < suelto
-     rompería la tabla, así que se escapan antes de inyectarlos. */
+  /* Texto libre de Motokontrol: se escapa antes de inyectarlo en tablas. */
   function escHtml(v){
     return String(v == null ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  /* Columnas ordenables. Las de tipo 'fecha' se comparan cronológicamente, no
-     como texto: ordenar "08/09" contra "10/08" alfabéticamente da cualquier
-     cosa. */
-  const REING_COLUMNAS = {
-    placa: 'texto',
-    comentario_1: 'texto',
-    fecha_1: 'fecha',
-    comentario_2: 'texto',
-    fecha_2: 'fecha',
-  };
-  // Por defecto por placa, así las entradas de una misma moto quedan juntas.
-  let reingOrden = { col: 'placa', dir: 1 };
-
-  function valorOrden(fila, col){
-    if(REING_COLUMNAS[col] === 'fecha'){
-      const t = Date.parse(fila[col] || '');
-      return Number.isFinite(t) ? t : -Infinity; // sin fecha, al principio
-    }
-    return String(fila[col] ?? '');
-  }
-
-  function compararReingresos(a, b){
-    const col = reingOrden.col;
-    const va = valorOrden(a, col);
-    const vb = valorOrden(b, col);
-    let cmp = typeof va === 'number'
-      ? va - vb
-      : va.localeCompare(vb, 'es', { numeric: true, sensitivity: 'base' });
-    cmp *= reingOrden.dir;
-    // Empate: se desempata por la fecha del reingreso, para que dentro de una
-    // misma placa las entradas queden en orden cronológico.
-    if(cmp === 0 && col !== 'fecha_2'){
-      return valorOrden(a, 'fecha_2') - valorOrden(b, 'fecha_2');
-    }
-    return cmp;
-  }
-
-  function pintarCabecerasReingresos(){
-    document.querySelectorAll('#mg-reing-head th[data-col]').forEach(th => {
-      const activa = th.dataset.col === reingOrden.col;
-      th.classList.toggle('activa', activa);
-      th.querySelector('.flecha').textContent = activa ? (reingOrden.dir === 1 ? '▲' : '▼') : '';
-      th.setAttribute('aria-sort', activa ? (reingOrden.dir === 1 ? 'ascending' : 'descending') : 'none');
-    });
-  }
-
-  document.getElementById('mg-reing-head').addEventListener('click', (e) => {
-    const th = e.target.closest('th[data-col]');
-    if(!th) return;
-    // Click en la misma columna invierte; en otra, empieza ascendente.
-    if(reingOrden.col === th.dataset.col) reingOrden.dir = -reingOrden.dir;
-    else reingOrden = { col: th.dataset.col, dir: 1 };
-    renderReingresos();
-  });
-
-  /* Una fila de par. Agrupada, la celda de placa va vacía: el encabezado del
-     grupo ya la dice y repetirla tres veces solo ensucia. */
-  function filaReingreso(c, agrupada){
-    return (
-      '<tr data-fila="' + c.id + '">' +
-        '<td class="placa">' + (agrupada ? '' : escHtml(c.placa || '—')) + '</td>' +
-        '<td class="coment">' + escHtml(c.comentario_1 || '—') + '</td>' +
-        '<td>' + fmtFecha(c.fecha_1) + '</td>' +
-        '<td class="coment">' + escHtml(c.comentario_2 || '—') + '</td>' +
-        '<td>' + fmtFecha(c.fecha_2) + '</td>' +
-        '<td class="acc">' +
-          '<button class="btn-reing si" data-id="' + c.id + '" data-decision="si">Sí</button>' +
-          '<button class="btn-reing no" data-id="' + c.id + '" data-decision="no">No</button>' +
-        '</td>' +
-      '</tr>'
-    );
-  }
-
-  function renderReingresos(){
-    const cuerpo = document.getElementById('mg-reingresos');
-    const cnt = document.getElementById('mg-reingresos-cnt');
-    cnt.textContent = reingresosPendientes.length ? '(' + reingresosPendientes.length + ')' : '';
-    pintarCabecerasReingresos();
-
-    if(!reingresosPendientes.length){
-      cuerpo.innerHTML = '<tr><td colspan="6" class="loading">No hay reingresos por revisar</td></tr>';
-      return;
-    }
-
-    // slice() para no reordenar el array original, que es el que se filtra al
-    // revisar un candidato.
-    const filas = reingresosPendientes.slice().sort(compararReingresos);
-
-    // Agrupado solo cuando el orden es por placa. Con cualquier otra columna
-    // el encabezado de grupo pelearía contra el orden pedido (los grupos
-    // romperían la secuencia de fechas), así que ahí la tabla va plana.
-    if(reingOrden.col !== 'placa'){
-      cuerpo.innerHTML = filas.map(c => filaReingreso(c, false)).join('');
-      return;
-    }
-
-    let html = '';
-    let i = 0;
-    while(i < filas.length){
-      const placa = filas[i].placa || '—';
-      let j = i;
-      while(j < filas.length && (filas[j].placa || '—') === placa) j++;
-      const n = j - i;
-
-      html +=
-        '<tr class="grupo-placa"><td colspan="6">' +
-          '<span class="placa">' + escHtml(placa) + '</span>' +
-          '<span class="cuenta">· ' + n + (n === 1 ? ' reingreso' : ' reingresos') + '</span>' +
-        '</td></tr>';
-      for(let k = i; k < j; k++) html += filaReingreso(filas[k], true);
-      i = j;
-    }
-    cuerpo.innerHTML = html;
-  }
-
-  function actualizarToastReingresos(){
-    const toast = document.getElementById('toast-reingresos');
-    const n = reingresosPendientes.length;
-    if(toastReingresosCerrado || n === 0){ toast.hidden = true; return; }
-    document.getElementById('toast-reingresos-txt').textContent =
-      n + (n === 1 ? ' posible reingreso por revisar' : ' posibles reingresos por revisar');
-    toast.hidden = false;
-  }
-
-  async function revisarReingreso(id, decision, boton){
-    const fila = boton.closest('tr');
-    const celda = boton.closest('td');
-    const botones = fila.querySelectorAll('.btn-reing');
-    botones.forEach(b => { b.disabled = true; });
-
-    try {
-      const res = await authFetch(`${WORKER_URL}/reingresos/revisar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, decision: decision }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if(!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
-
-      // Revisado: sale de la lista y la tabla se vuelve a pintar.
-      reingresosPendientes = reingresosPendientes.filter(c => c.id !== id);
-      renderReingresos();
-      actualizarToastReingresos();
-    } catch (err) {
-      console.error('Revisar reingreso falló:', err);
-      botones.forEach(b => { b.disabled = false; });
-      celda.classList.add('err');
-      const previo = celda.innerHTML;
-      celda.innerHTML = 'No se pudo guardar';
-      setTimeout(() => { celda.classList.remove('err'); celda.innerHTML = previo; }, 2500);
-    }
-  }
-
-  async function cargarReingresos(){
-    if (esAdmin) { return; }
-    const cuerpo = document.getElementById('mg-reingresos');
-    try {
-      const res = await authFetch(`${WORKER_URL}/reingresos`);
-      const data = await res.json();
-      reingresosPendientes = data.candidatos || [];
-      renderReingresos();
-      actualizarToastReingresos();
-    } catch (err) {
-      console.error('Cargar reingresos falló:', err);
-      cuerpo.innerHTML = '<tr><td colspan="6" class="loading">No se pudo cargar</td></tr>';
-    }
-  }
-
-  // Delegación: un solo listener que sobrevive a cada repintado de la tabla.
-  document.getElementById('mg-reingresos').addEventListener('click', (e) => {
-    const boton = e.target.closest('.btn-reing');
-    if(!boton || boton.disabled) return;
-    revisarReingreso(Number(boton.dataset.id), boton.dataset.decision, boton);
-  });
-
-  document.getElementById('toast-reingresos').addEventListener('click', (e) => {
-    if(e.target.closest('#toast-reingresos-cerrar')) return; // la X cierra, no navega
-    document.getElementById('mg-reingresos-card')
-      .scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-
-  document.getElementById('toast-reingresos-cerrar').addEventListener('click', (e) => {
-    e.stopPropagation();
-    toastReingresosCerrado = true;
-    document.getElementById('toast-reingresos').hidden = true;
-  });
-
   cargarVisionGeneral();
-  if (esAdmin) {
-    var cardReing = document.getElementById('mg-reingresos-card');
-    if (cardReing) cardReing.hidden = true;
-    var toastReing = document.getElementById('toast-reingresos');
-    if (toastReing) toastReing.hidden = true;
-  } else {
-    cargarReingresos();
-  }
   setInterval(cargarVisionGeneral, 3600000);
 
   // ── PANEL CHAT ─────────────────────────────────────────────────────────
