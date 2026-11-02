@@ -17,6 +17,7 @@
     ia: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     correcciones: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
     contrasenas: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    testing: '<path d="M9 3h6"/><path d="M10 3v6.5L4.6 18.4A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.4-2.6L14 9.5V3"/><path d="M7.5 15h9"/>',
     salir: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
     menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
     close: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
@@ -28,6 +29,7 @@
     { key: "ia",           label: "Asistente IA",        href: "agente-cst.html",      roles: ["admin", "manager", "developer"] },
     { key: "correcciones", label: "Correcciones",        href: "correcciones.html",    roles: ["manager", "developer"] },
     { key: "contrasenas",  label: "Contraseñas",         href: "reset-usuarios.html",  roles: ["developer"] },
+    { key: "testing",      label: "Testing",             href: "testing.html",         roles: ["developer"] },
   ];
 
   function svg(nombre) {

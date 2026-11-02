@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
 <script src="page-info.js?v=1"></script>
-<script src="sidebar.js?v=1"></script>
+<script src="sidebar.js?v=2"></script>
 <script>
 /* Guard de rol: manager, developer, admin. */
 var cstSession = guard(["admin","manager","developer"]);
@@ -324,6 +324,28 @@ var cstSession = guard(["admin","manager","developer"]);
   .mg-periodo-btn:hover { border-color: var(--gold); color: var(--gold); }
   .mg-periodo-txt { font-size: 12px; color: var(--text-muted); align-self: center; }
 
+  /* Indicadores (tendencia, técnicos, NPS) */
+  .mg-ind-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .mg-ind-rango { font-size: 11px; color: var(--text-muted); }
+  .mg-tendencia canvas { display: block; width: 100% !important; height: 260px !important; }
+  .mg-tec-row { margin-bottom: 12px; }
+  .mg-tec-row:last-child { margin-bottom: 0; }
+  .mg-tec-head { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; margin-bottom: 4px; }
+  .mg-tec-head .nombre { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+  .mg-tec-head .val { color: var(--text); font-weight: 600; flex-shrink: 0; }
+  .mg-tec-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .mg-nps-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .mg-nps-score { font-size: 34px; font-weight: 700; color: var(--gold); line-height: 1; }
+  .mg-nps-n { font-size: 12px; color: var(--text-muted); }
+  .mg-nps-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--border); margin-bottom: 6px; }
+  .mg-nps-bar i { display: block; height: 100%; }
+  .mg-nps-leyenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+  .mg-nps-leyenda b { color: var(--text); font-weight: 600; }
+  .mg-det-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+  .mg-det { border-left: 3px solid #FF6B6B; padding: 4px 0 4px 10px; font-size: 12px; }
+  .mg-det .meta { color: var(--text-muted); font-size: 11px; }
+  .mg-det .txt { color: var(--text); margin-top: 2px; }
+
   /* ── VISIÓN GENERAL (Motokontrol / manager) ── */
   .mg-note { font-size: 11px; color: var(--text-muted); margin: -10px 0 18px; }
 
@@ -528,7 +550,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-value" id="mg-ticket">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label"><span id="mg-facturado-lbl">Facturado mes</span><span class="info" tabindex="0" data-info="Total facturado del mes (taller + accesorios), según Siigo. No incluye venta de motos.">i</span></div>
+        <div class="kpi-label"><span id="mg-facturado-lbl">Facturado mes</span><span class="info" tabindex="0" data-info="Total facturado (taller + venta online), según Siigo. No incluye venta de motos.">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
         <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
@@ -541,6 +563,25 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-label">A revisar<span class="info der" tabindex="0" data-info="Órdenes con algo inusual que conviene revisar en Motokontrol.">i</span></div>
         <div class="kpi-value red" id="mg-revisar">—</div>
         <div class="kpi-sub" id="mg-revisar-sub"></div>
+      </div>
+    </div>
+
+    <div class="card mg-tendencia" style="margin-bottom:12px">
+      <div class="mg-ind-head">
+        <div class="section-title">Tendencia mensual<span class="info" tabindex="0" data-info="Barras: motos que ingresaron por mes (placas distintas, Motokontrol). Línea: ticket promedio de taller (Siigo FV-3 con ticket / tickets facturados) contra la meta de $650.000.">i</span></div>
+        <span class="mg-ind-rango" id="mg-ind-rango"></span>
+      </div>
+      <canvas id="chartTendencia"></canvas>
+    </div>
+
+    <div class="mg-charts-grid">
+      <div class="card">
+        <div class="section-title">Facturado por técnico<span class="info" tabindex="0" data-info="Facturado de taller en Siigo (FV-3) del período, asignado al técnico de la orden del ticket. Debajo: tickets facturados, NPS con su número de respuestas y reingresos atribuidos.">i</span></div>
+        <div id="mg-porTecnico"><div class="loading">Cargando…</div></div>
+      </div>
+      <div class="card">
+        <div class="section-title">NPS<span class="info der" tabindex="0" data-info="Encuesta NPS del taller. Promotores 9-10, pasivos 7-8, detractores 0-6. NPS = % promotores − % detractores. La fecha de las respuestas antiguas sale del historial de versiones de la hoja.">i</span></div>
+        <div id="mg-nps"><div class="loading">Cargando…</div></div>
       </div>
     </div>
 
@@ -560,7 +601,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:12px">
-      <div class="section-title">Ventas mostrador<span class="info" tabindex="0" data-info="Venta de accesorios/repuestos sin orden de taller.">i</span></div>
+      <div class="section-title">Venta online<span class="info" tabindex="0" data-info="Ventas sin orden de taller (facturas FV-5 en Siigo).">i</span></div>
       <div id="mg-ventasMostrador">
         <div class="loading">Cargando…</div>
       </div>
@@ -1250,7 +1291,7 @@ var cstSession = guard(["admin","manager","developer"]);
           '<span class="l">total</span>' +
         '</div>' +
       '</div>' +
-      '<div class="mg-mostrador-nota">Venta de accesorios/repuestos sin orden de taller.</div>';
+      '<div class="mg-mostrador-nota">Ventas sin orden de taller (FV-5).</div>';
   }
 
   /* Barras con el total de motos (activas + terminadas) por técnico,
@@ -1488,7 +1529,115 @@ var cstSession = guard(["admin","manager","developer"]);
     cargarVisionGeneral();
   }
 
+  /* ── INDICADORES (/indicadores) ─────────────────────────────────────── */
+  const MESES_CORTOS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function etiquetaMes(m){ return MESES_CORTOS[Number(m.slice(5,7)) - 1] + ' ' + m.slice(2,4); }
+  function fmtMillones(n){ return n == null ? '—' : '$' + (n / 1e6).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + 'M'; }
+  function paramsIndicadores(){
+    const p = new URLSearchParams();
+    if(incluirCorbeta) p.set('corbeta', 'incluir');
+    if(periodo){ p.set('desde', periodo.desde); p.set('hasta', periodo.hasta); }
+    const q = p.toString();
+    return q ? '?' + q : '';
+  }
+
+  function renderTendencia(d){
+    const m = d.mensual || [];
+    destroyChart('tendencia');
+    chartInstances.tendencia = new Chart(document.getElementById('chartTendencia'), {
+      data: {
+        labels: m.map(x => etiquetaMes(x.mes)),
+        datasets: [
+          { type: 'bar', label: 'Motos ingresadas', data: m.map(x => x.placas), yAxisID: 'y',
+            backgroundColor: 'rgba(201,168,76,0.45)', borderColor: '#C9A84C', borderWidth: 1, borderRadius: 3, order: 2 },
+          { type: 'line', label: 'Ticket promedio', data: m.map(x => x.ticket_promedio), yAxisID: 'y1',
+            borderColor: '#F0F0F0', backgroundColor: '#F0F0F0', pointRadius: 3, tension: 0.25, spanGaps: true, order: 1 },
+          { type: 'line', label: 'Meta ticket', data: m.map(() => d.meta_ticket_promedio), yAxisID: 'y1',
+            borderColor: '#C8102E', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, order: 0 },
+        ],
+      },
+      options: {
+        ...CHART_DEFAULTS,
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { display: true, labels: { color: '#888', boxWidth: 12, font: { size: 11 } } },
+          tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: {
+            label: ctx => ctx.dataset.yAxisID === 'y1'
+              ? ctx.dataset.label + ': ' + fmtPesos(ctx.parsed.y)
+              : ctx.dataset.label + ': ' + ctx.parsed.y,
+          } },
+        },
+        scales: {
+          x: { ...CHART_DEFAULTS.scales.x },
+          y: { ...CHART_DEFAULTS.scales.y, position: 'left', beginAtZero: true },
+          y1: { ...CHART_DEFAULTS.scales.y, position: 'right', beginAtZero: true, grid: { drawOnChartArea: false },
+                ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => fmtMillones(v) } },
+        },
+      },
+    });
+  }
+
+  function renderPorTecnico(lista){
+    const cont = document.getElementById('mg-porTecnico');
+    if(!lista || !lista.length){ cont.innerHTML = '<div class="loading">Sin datos en el período</div>'; return; }
+    const max = Math.max(1, ...lista.map(t => t.facturado || 0));
+    const total = lista.reduce((a, t) => a + (t.facturado || 0), 0) || 1;
+    cont.innerHTML = lista.map(t => {
+      const pct = Math.round((t.facturado / max) * 100);
+      const part = Math.round((t.facturado / total) * 100);
+      const nps = t.nps_resp ? ('NPS ' + t.nps + ' (' + t.nps_resp + (t.nps_resp === 1 ? ' resp.)' : ' resp.)')) : 'NPS sin respuestas';
+      return '<div class="mg-tec-row">' +
+        '<div class="mg-tec-head"><span class="nombre">' + escHtml(t.tecnico) + '</span>' +
+          '<span class="val">' + fmtPesos(t.facturado) + ' · ' + part + '%</span></div>' +
+        '<div class="mg-servicio-bar"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="mg-tec-sub">' + t.tickets_facturados + ' tickets · ' + t.ordenes + ' órdenes · ' + nps +
+          (t.reingresos ? ' · ' + t.reingresos + (t.reingresos === 1 ? ' reingreso' : ' reingresos') : '') + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderNps(n){
+    const cont = document.getElementById('mg-nps');
+    if(!n || !n.respuestas){ cont.innerHTML = '<div class="loading">Sin respuestas en el período</div>'; return; }
+    const pct = x => Math.round((x / n.respuestas) * 100);
+    const dets = (n.detractores_lista || []).map(d =>
+      '<div class="mg-det"><div class="meta">' + escHtml(d.fecha) + ' · nota ' + d.calificacion +
+        (d.placa ? ' · ' + escHtml(d.placa) : '') + (d.tecnico ? ' · ' + escHtml(d.tecnico) : '') + '</div>' +
+        (d.observacion ? '<div class="txt">' + escHtml(d.observacion) + '</div>' : '') + '</div>'
+    ).join('');
+    cont.innerHTML =
+      '<div class="mg-nps-top"><span class="mg-nps-score">' + n.nps + '</span>' +
+        '<span class="mg-nps-n">' + n.respuestas + ' respuestas</span></div>' +
+      '<div class="mg-nps-bar">' +
+        '<i style="width:' + pct(n.promotores) + '%;background:#2ECC71"></i>' +
+        '<i style="width:' + pct(n.pasivos) + '%;background:#888"></i>' +
+        '<i style="width:' + pct(n.detractores) + '%;background:#FF6B6B"></i></div>' +
+      '<div class="mg-nps-leyenda"><span>Promotores <b>' + n.promotores + '</b></span>' +
+        '<span>Pasivos <b>' + n.pasivos + '</b></span><span>Detractores <b>' + n.detractores + '</b></span></div>' +
+      (dets ? '<div class="section-title" style="font-size:11px;margin-bottom:6px">Detractores recientes</div><div class="mg-det-list">' + dets + '</div>' : '');
+  }
+
+  async function cargarIndicadores(){
+    try {
+      const res = await authFetch(`${WORKER_URL}/indicadores` + paramsIndicadores());
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      document.getElementById('mg-ind-rango').textContent = d.rango
+        ? d.rango.desde + ' a ' + d.rango.hasta + (periodo ? '' : ' (año en curso)') : '';
+      renderTendencia(d);
+      renderPorTecnico(d.por_tecnico || []);
+      renderNps(d.nps);
+    } catch (err) {
+      document.getElementById('mg-porTecnico').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-nps').innerHTML = '<div class="loading">No se pudo cargar</div>';
+      document.getElementById('mg-ind-rango').textContent = '';
+    }
+  }
+
   async function cargarVisionGeneral() {
+    cargarIndicadores();
     try {
       const res = await authFetch(`${WORKER_URL}/taller-estado` + paramsTaller());
       const data = await res.json();
@@ -1506,7 +1655,7 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-facturado-sub').innerHTML =
         (mg.facturado_taller_mes != null || mg.facturado_accesorios_mes != null)
           ? '<span class="tenue">Taller: ' + fmtPesos(mg.facturado_taller_mes ?? 0) +
-            ' · Accesorios: ' + fmtPesos(mg.facturado_accesorios_mes ?? 0) + '</span>'
+            ' · Venta online: ' + fmtPesos(mg.facturado_accesorios_mes ?? 0) + '</span>'
           : '<span class="tenue">Siigo</span>';
       // fmtDuracion espera {promedio_dias, promedio_horas}, que es justo la
       // forma de tiempo_promedio_taller.
