@@ -546,11 +546,11 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-kpis" style="margin-bottom:20px">
       <div class="card">
-        <div class="kpi-label">Ticket promedio<span class="info" tabindex="0" data-info="El valor promedio de una reparación facturada este mes.">i</span></div>
+        <div class="kpi-label">Ticket promedio · sin IVA<span class="info" tabindex="0" data-info="Valor promedio sin IVA de una reparación facturada en Siigo (FV-3 con ticket).">i</span></div>
         <div class="kpi-value" id="mg-ticket">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label"><span id="mg-facturado-lbl">Facturado mes</span><span class="info" tabindex="0" data-info="Total facturado (taller + venta online), según Siigo. No incluye venta de motos.">i</span></div>
+        <div class="kpi-label"><span id="mg-facturado-lbl">Facturado mes · sin IVA</span><span class="info" tabindex="0" data-info="Valor sin IVA, igual que el reporte de Siigo. Suma taller (FV-3) y venta online (FV-5); debajo va cada uno por separado. No incluye venta de motos.">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
         <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
@@ -568,7 +568,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="card mg-tendencia" style="margin-bottom:12px">
       <div class="mg-ind-head">
-        <div class="section-title">Tendencia mensual<span class="info" tabindex="0" data-info="Barras: motos que ingresaron por mes (placas distintas, Motokontrol). Línea: ticket promedio de taller (Siigo FV-3 con ticket / tickets facturados) contra la meta de $650.000.">i</span></div>
+        <div class="section-title">Tendencia mensual<span class="info" tabindex="0" data-info="Barras: motos que ingresaron por mes (placas distintas, Motokontrol). Línea: ticket promedio de taller sin IVA (Siigo FV-3 con ticket / tickets facturados) contra la meta de $650.000.">i</span></div>
         <span class="mg-ind-rango" id="mg-ind-rango"></span>
       </div>
       <canvas id="chartTendencia"></canvas>
@@ -576,7 +576,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-charts-grid">
       <div class="card">
-        <div class="section-title">Facturado por técnico<span class="info" tabindex="0" data-info="Facturado de taller en Siigo (FV-3) del período, asignado al técnico de la orden del ticket. Debajo: tickets facturados, NPS con su número de respuestas y reingresos atribuidos.">i</span></div>
+        <div class="section-title">Facturado por técnico · sin IVA<span class="info" tabindex="0" data-info="Facturado de taller sin IVA en Siigo (FV-3) del período, asignado al técnico de la orden del ticket. Debajo: tickets facturados, NPS con su número de respuestas y reingresos atribuidos.">i</span></div>
         <div id="mg-porTecnico"><div class="loading">Cargando…</div></div>
       </div>
       <div class="card">
@@ -601,7 +601,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:12px">
-      <div class="section-title">Venta online<span class="info" tabindex="0" data-info="Ventas sin orden de taller (facturas FV-5 en Siigo).">i</span></div>
+      <div class="section-title">Venta online · sin IVA<span class="info" tabindex="0" data-info="Ventas sin orden de taller (facturas FV-5 en Siigo), valor sin IVA.">i</span></div>
       <div id="mg-ventasMostrador">
         <div class="loading">Cargando…</div>
       </div>
@@ -613,7 +613,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <canvas id="chartMotosTecnico" height="200"></canvas>
       </div>
       <div class="card" id="mg-valorPorDia-card">
-        <div class="section-title">Valor por día<span class="info der" tabindex="0" data-info="Cuánto se facturó cada día según Siigo.">i</span></div>
+        <div class="section-title">Valor por día · sin IVA<span class="info der" tabindex="0" data-info="Cuánto se facturó cada día según Siigo (taller + venta online), sin IVA.">i</span></div>
         <canvas id="chartValorPorDia" height="200"></canvas>
         <div class="mg-note" style="margin:8px 0 0">Valores &gt;20M excluidos, valor real pendiente de Siigo.</div>
       </div>
@@ -1504,7 +1504,7 @@ var cstSession = guard(["admin","manager","developer"]);
       : 'Sin rango: estado actual y mes en curso';
     document.getElementById('mg-ingresadas-lbl').textContent = periodo ? 'Ingresadas' : 'Ingresadas mes';
     document.getElementById('mg-entregas-lbl').textContent = periodo ? 'Entregadas' : 'Entregadas mes';
-    document.getElementById('mg-facturado-lbl').textContent = periodo ? 'Facturado' : 'Facturado mes';
+    document.getElementById('mg-facturado-lbl').textContent = periodo ? 'Facturado · sin IVA' : 'Facturado mes · sin IVA';
     cargarVisionGeneral();
   }
   function periodoRapido(cual){
