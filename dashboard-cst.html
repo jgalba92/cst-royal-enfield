@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
 <script src="page-info.js?v=1"></script>
-<script src="sidebar.js?v=2"></script>
+<script src="sidebar.js?v=3"></script>
 <script>
 /* Guard de rol: manager, developer, admin. */
 var cstSession = guard(["admin","manager","developer"]);
@@ -349,6 +349,8 @@ var cstSession = guard(["admin","manager","developer"]);
   /* ── VISIÓN GENERAL (Motokontrol / manager) ── */
   .mg-note { font-size: 11px; color: var(--text-muted); margin: -10px 0 18px; }
 
+  .mg-fila-tit { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin: 4px 0 8px; }
+  .mg-fila-tit b { color: var(--gold); font-weight: 600; letter-spacing: 0; text-transform: none; }
   .mg-kpis {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -478,18 +480,10 @@ var cstSession = guard(["admin","manager","developer"]);
       <span id="clockDate"></span>
       <span id="lastUpdate" style="display:none;font-size:11px;color:var(--text-muted);margin-top:4px;display:block"></span>
     </div>
-    <button onclick="loadData(); cargarVisionGeneral();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
+    <button onclick="cargarVisionGeneral();" title="Actualizar datos" style="background:none;border:none;cursor:pointer;color:var(--gold);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px;transition:opacity 0.15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">↺</button>
   </div>
 
   <div class="mg-note">Actualiza cada hora.</div>
-
-  <!-- FUENTE TOGGLE (solo developer) — arriba, antes del contenido -->
-  <div id="fuente-toggle" style="display:none;margin-bottom:20px">
-    <div class="fuente-toggle">
-      <button type="button" id="btn-fuente-mk" class="fuente-btn active" onclick="mostrarFuente('mk')">Motokontrol</button>
-      <button type="button" id="btn-fuente-at" class="fuente-btn" onclick="mostrarFuente('airtable')">Airtable</button>
-    </div>
-  </div>
 
   <!-- ═══ VISIÓN GENERAL (Motokontrol) ═══ -->
   <div id="motokontrol-section">
@@ -507,7 +501,7 @@ var cstSession = guard(["admin","manager","developer"]);
       <button type="button" class="mg-periodo-btn" onclick="periodoRapido('mes')">Este mes</button>
       <button type="button" class="mg-periodo-btn" onclick="periodoRapido('anio')">2026</button>
       <button type="button" class="mg-periodo-btn" onclick="periodoRapido('')">Limpiar</button>
-      <span class="mg-periodo-txt" id="mg-periodo-txt">Sin rango: estado actual y mes en curso</span>
+      <span class="mg-periodo-txt" id="mg-periodo-txt">Sin rango: mes en curso</span>
     </div>
 
     <div class="mg-corbeta-bar">
@@ -519,23 +513,20 @@ var cstSession = guard(["admin","manager","developer"]);
       <span class="info" tabindex="0" data-info="Motos de Corbeta (importador de Royal Enfield). Tardan en pagar y cerrar tickets, por eso por defecto quedan fuera de los conteos.">i</span>
     </div>
 
+    <div class="mg-fila-tit">Hoy · foto del taller, no cambia con el período</div>
     <div class="mg-kpis">
       <div class="card">
-        <div class="kpi-label">En taller<span class="info" tabindex="0" data-info="Total de motos que están en el taller ahora mismo (sin entregar).">i</span></div>
+        <div class="kpi-label">En taller hoy<span class="info" tabindex="0" data-info="Motos abiertas ahora mismo (por empezar, en trabajo o listas sin entregar), sin importar cuándo entraron.">i</span></div>
         <div class="kpi-value" id="mg-enTaller">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label">Pendientes +24h<span class="info" tabindex="0" data-info="Motos que llevan más de un día en el taller sin salir.">i</span></div>
+        <div class="kpi-label">Más de 24 h<span class="info" tabindex="0" data-info="De las motos en taller hoy, las que llevan más de un día desde que entraron.">i</span></div>
         <div class="kpi-value red" id="mg-pendientes24h">—</div>
       </div>
       <div class="card">
-        <div class="kpi-label"><span id="mg-ingresadas-lbl">Ingresadas mes</span><span class="info" tabindex="0" data-info="Órdenes que entraron al taller en el período (sin anuladas), estén o no entregadas.">i</span></div>
-        <div class="kpi-value" id="mg-ingresadas">—</div>
-        <div class="kpi-sub" id="mg-ingresadas-sub"></div>
-      </div>
-      <div class="card">
-        <div class="kpi-label"><span id="mg-entregas-lbl">Entregadas mes</span><span class="info" tabindex="0" data-info="Motos entregadas a sus dueños en el período, según la fecha de entrega de Motokontrol.">i</span></div>
-        <div class="kpi-value" id="mg-entregasMes">—</div>
+        <div class="kpi-label">Sin técnico<span class="info" tabindex="0" data-info="Órdenes abiertas hoy con el técnico genérico de Motokontrol. Hay que asignarlas.">i</span></div>
+        <div class="kpi-value red" id="mg-revisar">—</div>
+        <div class="kpi-sub" id="mg-revisar-sub"></div>
       </div>
       <div class="card">
         <div class="kpi-label">Tiempo promedio en taller<span class="info der" tabindex="0" data-info="Días promedio que una moto pasa en el taller, desde que entra hasta que se entrega. Solo hay datos desde septiembre de 2026.">i</span></div>
@@ -543,32 +534,37 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-sub" id="mg-tiempoTaller-sub"></div>
       </div>
     </div>
-
-    <div class="mg-kpis" style="margin-bottom:20px">
+    <div class="mg-fila-tit">Período · <b id="mg-periodo-kpis">mes en curso</b></div>
+    <div class="mg-kpis">
       <div class="card">
-        <div class="kpi-label">Ticket promedio · sin IVA<span class="info" tabindex="0" data-info="Valor promedio sin IVA de una reparación facturada en Siigo (FV-3 con ticket).">i</span></div>
-        <div class="kpi-value" id="mg-ticket">—</div>
+        <div class="kpi-label">Ingresadas<span class="info" tabindex="0" data-info="Órdenes que entraron al taller en el período (sin anuladas), estén o no entregadas.">i</span></div>
+        <div class="kpi-value" id="mg-ingresadas">—</div>
+        <div class="kpi-sub" id="mg-ingresadas-sub"></div>
       </div>
       <div class="card">
-        <div class="kpi-label"><span id="mg-facturado-lbl">Facturado mes · sin IVA</span><span class="info" tabindex="0" data-info="Valor sin IVA, igual que el reporte de Siigo. Suma taller (FV-3) y venta online (FV-5); debajo va cada uno por separado. No incluye venta de motos.">i</span></div>
+        <div class="kpi-label">Entregadas<span class="info" tabindex="0" data-info="Motos entregadas en el período. Usa la fecha de entrega de Motokontrol y, cuando viene vacía (la mayoría), la fecha de la factura de Siigo.">i</span></div>
+        <div class="kpi-value" id="mg-entregasMes">—</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Ticket promedio · sin IVA<span class="info" tabindex="0" data-info="Facturado de taller con ticket (Siigo FV-3) dividido entre tickets distintos del período, sin IVA. Una orden con dos facturas cuenta como un ticket.">i</span></div>
+        <div class="kpi-value" id="mg-ticket">—</div>
+        <div class="kpi-sub" id="mg-ticket-sub"></div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Facturado · sin IVA<span class="info" tabindex="0" data-info="Valor sin IVA, igual que el reporte de Siigo. Suma taller (FV-3) y venta online (FV-5); debajo va cada uno por separado. No incluye venta de motos.">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
         <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
       <div class="card">
-        <div class="kpi-label">Tasa reingreso<span class="info" tabindex="0" data-info="Órdenes marcadas como &quot;retorno taller&quot; en Motokontrol sobre las órdenes que entraron en el período. El reingreso se asigna al técnico de la orden anterior de esa placa.">i</span></div>
+        <div class="kpi-label">Tasa reingreso<span class="info der" tabindex="0" data-info="Órdenes marcadas como &quot;retorno taller&quot; en Motokontrol sobre las órdenes que entraron en el período (sin anuladas). El reingreso se asigna al técnico de la orden anterior de esa placa.">i</span></div>
         <div class="kpi-value" id="mg-reingreso">—</div>
         <div class="kpi-sub" id="mg-reingreso-sub"></div>
       </div>
-      <div class="card">
-        <div class="kpi-label">A revisar<span class="info der" tabindex="0" data-info="Órdenes con algo inusual que conviene revisar en Motokontrol.">i</span></div>
-        <div class="kpi-value red" id="mg-revisar">—</div>
-        <div class="kpi-sub" id="mg-revisar-sub"></div>
-      </div>
     </div>
-
+    <div style="margin-bottom:20px"></div>
     <div class="card mg-tendencia" style="margin-bottom:12px">
       <div class="mg-ind-head">
-        <div class="section-title">Tendencia mensual<span class="info" tabindex="0" data-info="Barras: motos que ingresaron por mes (placas distintas, Motokontrol). Línea: ticket promedio de taller sin IVA (Siigo FV-3 con ticket / tickets facturados) contra la meta de $650.000.">i</span></div>
+        <div class="section-title">Tendencia mensual<span class="info" tabindex="0" data-info="Barras: motos que ingresaron por mes (placas distintas, Motokontrol). Línea: ticket promedio de taller sin IVA (Siigo FV-3 con ticket / tickets facturados) contra la meta sin IVA. El mes en curso va atenuado porque aún no cierra.">i</span></div>
         <span class="mg-ind-rango" id="mg-ind-rango"></span>
       </div>
       <canvas id="chartTendencia"></canvas>
@@ -580,20 +576,20 @@ var cstSession = guard(["admin","manager","developer"]);
         <div id="mg-porTecnico"><div class="loading">Cargando…</div></div>
       </div>
       <div class="card">
-        <div class="section-title">NPS<span class="info der" tabindex="0" data-info="Encuesta NPS del taller. Promotores 9-10, pasivos 7-8, detractores 0-6. NPS = % promotores − % detractores. La fecha de las respuestas antiguas sale del historial de versiones de la hoja.">i</span></div>
+        <div class="section-title">Satisfacción (NPS)<span class="info der" tabindex="0" data-info="Encuesta del taller. Promotores 9-10, pasivos 7-8, detractores 0-6. La cifra grande es % promotores (promotores sobre encuestas). NPS estándar = % promotores menos % detractores. La fecha de las respuestas antiguas sale del historial de versiones de la hoja.">i</span></div>
         <div id="mg-nps"><div class="loading">Cargando…</div></div>
       </div>
     </div>
 
     <div class="mg-charts-grid">
       <div class="card">
-        <div class="section-title">Servicios más frecuentes<span class="info" tabindex="0" data-info="Los trabajos que más se repiten en el taller.">i</span></div>
+        <div class="section-title">Servicios en taller · hoy<span class="info" tabindex="0" data-info="Los trabajos que más se repiten entre las motos abiertas hoy.">i</span></div>
         <div class="mg-servicios-list" id="mg-serviciosFrecuentes">
           <div class="loading">Cargando…</div>
         </div>
       </div>
       <div class="card">
-        <div class="section-title">Cobertura de facturación<span class="info der" tabindex="0" data-info="De las motos ya entregadas, cuántas tienen su factura registrada en Siigo.">i</span></div>
+        <div class="section-title">Cobertura de facturación · período<span class="info der" tabindex="0" data-info="De las motos entregadas en el período, cuántas tienen su factura registrada en Siigo.">i</span></div>
         <div class="mg-quality-wrap" id="mg-coberturaFacturacion">
           <div class="loading">Cargando…</div>
         </div>
@@ -601,7 +597,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:12px">
-      <div class="section-title">Venta online · sin IVA<span class="info" tabindex="0" data-info="Ventas sin orden de taller (facturas FV-5 en Siigo), valor sin IVA.">i</span></div>
+      <div class="section-title">Venta online · sin IVA · período<span class="info" tabindex="0" data-info="Ventas sin orden de taller (facturas FV-5 en Siigo), valor sin IVA.">i</span></div>
       <div id="mg-ventasMostrador">
         <div class="loading">Cargando…</div>
       </div>
@@ -609,11 +605,11 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-charts-grid">
       <div class="card">
-        <div class="section-title">Motos por técnico<span class="info" tabindex="0" data-info="Cuántas motos tiene asignadas cada técnico.">i</span></div>
+        <div class="section-title">Motos por técnico · hoy<span class="info" tabindex="0" data-info="Cuántas motos abiertas tiene asignadas cada técnico ahora.">i</span></div>
         <canvas id="chartMotosTecnico" height="200"></canvas>
       </div>
       <div class="card" id="mg-valorPorDia-card">
-        <div class="section-title">Valor por día · sin IVA<span class="info der" tabindex="0" data-info="Cuánto se facturó cada día según Siigo (taller + venta online), sin IVA.">i</span></div>
+        <div class="section-title">Valor por día · sin IVA · período<span class="info der" tabindex="0" data-info="Cuánto se facturó cada día según Siigo (taller + venta online), sin IVA.">i</span></div>
         <canvas id="chartValorPorDia" height="200"></canvas>
         <div class="mg-note" style="margin:8px 0 0">Valores &gt;20M excluidos, valor real pendiente de Siigo.</div>
       </div>
@@ -632,7 +628,7 @@ var cstSession = guard(["admin","manager","developer"]);
     </div>
 
     <div class="card" style="margin-bottom:20px">
-      <div class="section-title">Abiertas más de 30 días<span class="info" tabindex="0" data-info="Órdenes sin cerrar que llevan más de un mes en Motokontrol. Revisar si la moto sigue en el taller o si quedó sin cerrar el ticket.">i</span><span class="mg-reing-cnt" id="mg-viejas-cnt"></span></div>
+      <div class="section-title">Abiertas más de 30 días · hoy<span class="info" tabindex="0" data-info="Órdenes sin cerrar que llevan más de un mes en Motokontrol. Revisar si la moto sigue en el taller o si quedó sin cerrar el ticket.">i</span><span class="mg-reing-cnt" id="mg-viejas-cnt"></span></div>
       <div class="table-wrap mg-table-scroll">
         <table>
           <thead>
@@ -647,7 +643,7 @@ var cstSession = guard(["admin","manager","developer"]);
 
     <div class="mg-tables-grid">
       <div class="card">
-        <div class="section-title">Últimas salidas<span class="info" tabindex="0" data-info="Las últimas motos entregadas a sus dueños.">i</span></div>
+        <div class="section-title">Últimas salidas · período<span class="info" tabindex="0" data-info="Las últimas motos entregadas en el período (fecha de entrega de Motokontrol o, si falta, de la factura).">i</span></div>
         <div class="table-wrap mg-table-scroll">
           <table>
             <thead>
@@ -660,7 +656,7 @@ var cstSession = guard(["admin","manager","developer"]);
         </div>
       </div>
       <div class="card">
-        <div class="section-title">Por entregar<span class="info der" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja, ordenadas por días de espera.">i</span></div>
+        <div class="section-title">Por entregar · hoy<span class="info der" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja, ordenadas por días de espera.">i</span></div>
         <div class="table-wrap mg-table-scroll">
           <table>
             <thead>
@@ -678,147 +674,13 @@ var cstSession = guard(["admin","manager","developer"]);
   </div>
   <!-- /motokontrol-section -->
 
-  <div id="airtable-section" style="display:none">
-  <!-- FILTROS -->
-  <div class="card filters-card">
-    <div class="section-title">Filtros</div>
-    <div class="filters-row">
-      <div class="filter-field">
-        <label>Fecha inicio</label>
-        <input type="date" id="fechaInicio">
-      </div>
-      <div class="filter-field">
-        <label>Fecha fin</label>
-        <input type="date" id="fechaFin">
-      </div>
-      <div class="filter-field">
-        <label>Técnico</label>
-        <select id="filtroTecnico">
-          <option value="">Todos</option>
-          <option>Técnico 1</option>
-          <option>Técnico 2</option>
-          <option>Técnico 3</option>
-          <option>Técnico 4</option>
-          <option>Técnico 5</option>
-          <option>Técnico 6</option>
-        </select>
-      </div>
-      <button class="apply-btn" onclick="applyFilters()">Aplicar filtros</button>
-    </div>
-  </div>
-
-  <!-- KPIs -->
-  <div class="kpi-grid" id="kpiGrid">
-    <div class="kpi-card">
-      <div class="kpi-label">Motos en taller ahora</div>
-      <div class="kpi-value" id="kpi-enTaller">—</div>
-      <div class="kpi-sub">Sin salida registrada</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pendientes +24h</div>
-      <div class="kpi-value red" id="kpi-pendientes24h">—</div>
-      <div class="kpi-sub">Con ingreso hace más de 24h</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Tasa entrega a tiempo</div>
-      <div class="kpi-value gold" id="kpi-entregaTiempo">—</div>
-      <div class="kpi-sub">Del período seleccionado</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Tasa upsell cerrado</div>
-      <div class="kpi-value gold" id="kpi-upsell">—</div>
-      <div class="kpi-sub">Del período seleccionado</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Tasa de reingreso</div>
-      <div class="kpi-value red" id="kpi-reingreso">—</div>
-      <div class="kpi-sub" id="kpi-reingreso-sub">Del período seleccionado</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Valor facturado</div>
-      <div class="kpi-value" id="kpi-facturado">—</div>
-      <div class="kpi-sub">Suma Valor final (salidas)</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Ticket promedio</div>
-      <div class="kpi-value" id="kpi-ticket">—</div>
-      <div class="kpi-sub">Promedio Valor final</div>
-    </div>
-  </div>
-
-  <!-- CHARTS -->
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="section-title">Servicios más frecuentes</div>
-      <canvas id="chartServicios" height="200"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="section-title">Motos por técnico</div>
-      <canvas id="chartTecnicos" height="200"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="section-title">Ingresos por origen</div>
-      <canvas id="chartOrigen" height="200"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="section-title">Valor facturado por día</div>
-      <canvas id="chartValorDia" height="200"></canvas>
-    </div>
-  </div>
-
-  <!-- TABLA -->
-  <div class="card table-card">
-    <div class="section-title">Últimas 20 salidas</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Placa</th>
-            <th>Técnico</th>
-            <th>Valor final</th>
-            <th>Entrega</th>
-            <th>Upsell</th>
-          </tr>
-        </thead>
-        <tbody id="tablaBody">
-          <tr><td colspan="6" class="loading">Cargando...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  </div>
-  <!-- /airtable-section -->
 
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- CHAT PANEL -->
-<div id="chatPanel" style="display:none;position:fixed;bottom:90px;right:24px;width:320px;height:480px;z-index:998;background:#242424;border:1px solid #3A3A3A;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.5);flex-direction:column;overflow:hidden">
-  <div style="padding:12px 16px;border-bottom:1px solid #3A3A3A;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-    <span style="font-size:14px;font-weight:700;color:#C9A84C">Agente CST</span>
-    <button onclick="toggleChat()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;line-height:1;padding:2px 6px">✕</button>
-  </div>
-  <div id="panelChatHistory" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px">
-    <span id="panelChatEmpty" style="color:#888;font-size:12px;text-align:center;margin:auto">Haz una pregunta sobre el taller...</span>
-  </div>
-  <div style="padding:10px;border-top:1px solid #3A3A3A;display:flex;gap:8px;flex-shrink:0">
-    <input id="panelChatInput" type="text" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendPanelChat()" style="flex:1;background:#2E2E2E;border:1px solid #3A3A3A;border-radius:8px;color:#F0F0F0;font-family:Inter,sans-serif;font-size:13px;padding:8px 10px;outline:none">
-    <button onclick="sendPanelChat()" style="background:#C8102E;color:white;border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-      <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-    </button>
-  </div>
-</div>
-
-<button onclick="toggleChat()" id="chatFab" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" style="position:fixed;bottom:24px;right:24px;z-index:999;width:56px;height:56px;border-radius:50%;background:#C8102E;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:transform 0.15s;border:none;cursor:pointer">
-  <svg viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-</button>
-
 <script>
   const WORKER_URL = 'https://cst-royal-enfield-api.juanguillermoalba.workers.dev';
-  const TABLE_INGRESO = 'tblVfL0uCihLTIQ9l';
-  const TABLE_SALIDA  = 'tblRwfsW7lTwGzvpJ';
 
   let chartInstances = {};
   let dashboardData = {};
@@ -847,231 +709,7 @@ var cstSession = guard(["admin","manager","developer"]);
       now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  // ── FILTERS (Airtable, legado) ────────────────────────────────────────
-  function setDefaultDates() {
-    const today = new Date();
-    const ago30 = new Date();
-    ago30.setDate(today.getDate() - 90);
-    document.getElementById('fechaFin').value   = today.toISOString().slice(0, 10);
-    document.getElementById('fechaInicio').value = ago30.toISOString().slice(0, 10);
-  }
-
-  function getFilters() {
-    return {
-      fechaInicio: document.getElementById('fechaInicio').value,
-      fechaFin:    document.getElementById('fechaFin').value,
-      tecnico:     document.getElementById('filtroTecnico').value,
-    };
-  }
-
-  function applyFilters() { loadData(); }
-
-  // ── DATA LOADING (Airtable, legado) ──────────────────────────────────
-  async function loadData() {
-    const filters = getFilters();
-
-    try {
-      const fechaFinMas1 = new Date(filters.fechaFin);
-      fechaFinMas1.setDate(fechaFinMas1.getDate() + 1);
-      const fechaFinParam = fechaFinMas1.toISOString().slice(0, 10);
-      const params = new URLSearchParams({ fechaInicio: filters.fechaInicio, fechaFin: fechaFinParam });
-      if (filters.tecnico) params.set('tecnico', filters.tecnico);
-
-      const res = await authFetch(`${WORKER_URL}/dashboard?${params}`);
-      const raw = await res.json();
-
-      const ingresoRecords = (raw.ingreso?.records || []).map(r => ({ ...r.fields, createdTime: r.createdTime }));
-      const salidaRecords  = (raw.salida?.records  || []).map(r => ({ ...r.fields, createdTime: r.createdTime }));
-
-      const data = calcularDatos(ingresoRecords, salidaRecords, filters);
-      dashboardData = data;
-
-      const facturacionPorTecnico = {};
-      salidaRecords.forEach(r => {
-        const t = r['Técnico entrega'];
-        if (t) facturacionPorTecnico[t] = (facturacionPorTecnico[t] || 0) + (r['Valor final'] || 0);
-      });
-
-      const ingresoByPlacaLocal = {};
-      ingresoRecords.forEach(r => { if (r['Placa']) ingresoByPlacaLocal[(r['Placa'] || '').toUpperCase()] = r; });
-
-      const retrasosPorTecnico = {};
-      salidaRecords.filter(r => r['Entrega'] === 'Retrasada').forEach(r => {
-        const ingresoRec = ingresoByPlacaLocal[(r['Placa'] || '').toUpperCase()];
-        const t = ingresoRec?.['Técnico asignado'] || r['Técnico entrega'];
-        if (t) retrasosPorTecnico[t] = (retrasosPorTecnico[t] || 0) + 1;
-      });
-
-      const deltaEstimadoFinal = ingresoRecords
-        .filter(r => r['SALIDA'] && r['SALIDA'].length > 0)
-        .map(r => {
-          const salida = salidaRecords.find(s => (s['Placa'] || '').toUpperCase() === (r['Placa'] || '').toUpperCase());
-          return {
-            placa: r['Placa'],
-            estimado: r['Valor estimado'] || 0,
-            final: salida?.['Valor final'] || 0,
-            diferencia: (salida?.['Valor final'] || 0) - (r['Valor estimado'] || 0)
-          };
-        });
-
-      const motosEnTallerDetalle = ingresoRecords
-        .filter(r => !new Set(salidaRecords.map(s => (s['Placa'] || '').toUpperCase())).has((r['Placa'] || '').toUpperCase()))
-        .map(r => ({
-          placa: r['Placa'],
-          tecnico: r['Técnico asignado'],
-          tipo_servicio: r['Tipo servicio'],
-          horas_en_taller: Math.round((new Date() - new Date(r['Timestamp ingreso'])) / 3600000),
-          complejidad: r['Complejidad']
-        }));
-
-      dashboardData.rawContext = {
-        rango_fechas: { inicio: filters.fechaInicio, fin: filters.fechaFin },
-        total_ingresos: ingresoRecords.length,
-        total_salidas: salidaRecords.length,
-        motos_en_taller_ahora: data.kpis.enTaller,
-        motos_pendientes_mas_24h: data.kpis.pendientes24h,
-        motos_en_taller_detalle: motosEnTallerDetalle,
-        clientes_nuevos: ingresoRecords.filter(r => r['Tipo cliente'] === 'Nuevo').length,
-        clientes_recurrentes: ingresoRecords.filter(r => r['Tipo cliente'] === 'Recurrente').length,
-        origen_clientes: Object.fromEntries(data.origen.labels.map((l, i) => [l, data.origen.values[i]])),
-        tasa_entrega_tiempo: Math.round(data.kpis.entregaTiempo * 100) + '%',
-        entregas_a_tiempo: Math.round(data.kpis.entregaTiempo * salidaRecords.length),
-        entregas_retrasadas: Math.round((1 - data.kpis.entregaTiempo) * salidaRecords.length),
-        tasa_upsell_cerrado: Math.round(data.kpis.upsellCerrado * 100) + '%',
-        upsells_cerrados: Math.round(data.kpis.upsellCerrado * salidaRecords.length),
-        valor_facturado_total: data.kpis.valorFacturado,
-        ticket_promedio: data.kpis.ticketPromedio,
-        reingresos_total: data.kpis.reingresosCount,
-        tasa_reingreso: Math.round(data.kpis.tasaReingreso * 100) + '%',
-        facturacion_por_tecnico: facturacionPorTecnico,
-        retrasos_por_tecnico: retrasosPorTecnico,
-        servicios_frecuentes: data.servicios.labels.map((l, i) => ({ servicio: l, cantidad: data.servicios.values[i] })),
-        motos_por_tecnico: Object.fromEntries(data.tecnicos.labels.map((l, i) => [l, data.tecnicos.values[i]])),
-        delta_estimado_final: deltaEstimadoFinal,
-        salidas_recientes: data.ultimasSalidas
-      };
-
-      renderKPIs(data);
-      renderCharts(data);
-      renderTable(data.ultimasSalidas);
-
-    } catch (err) {
-      showToast('Error cargando datos del worker', true);
-    } finally {
-      const now = new Date();
-      const hhmm = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-      const el = document.getElementById('lastUpdate');
-      if (el) { el.textContent = `Actualizado: ${hhmm}`; el.style.display = 'block'; }
-    }
-  }
-
-  // ── CÁLCULO DE DATOS (Airtable, legado) ─────────────────────────────
-  function calcularDatos(ingreso, salida, filters) {
-    const placasConSalida = new Set(salida.map(r => (r['Placa'] || '').toUpperCase()).filter(Boolean));
-    const ahora = new Date();
-
-    const enTaller = ingreso.filter(r => !placasConSalida.has((r['Placa'] || '').toUpperCase()));
-    const pendientes24h = enTaller.filter(r => {
-      if (!r['Timestamp ingreso']) return false;
-      return (ahora - new Date(r['Timestamp ingreso'])) > 86400000;
-    });
-
-    const salidaConValor = salida.filter(r => r['Valor final'] > 0);
-    const entregaTiempo  = salida.length ? salida.filter(r => r['Entrega'] === 'A tiempo').length / salida.length : 0;
-    const upsellCerrado  = salida.length ? salida.filter(r => r['Upsell cerrado'] === true).length / salida.length : 0;
-    const valorFacturado = salida.reduce((s, r) => s + (r['Valor final'] || 0), 0);
-    const ticketPromedio = salidaConValor.length ? valorFacturado / salidaConValor.length : 0;
-    const reingresosCount = ingreso.filter(r => r['Re-ingreso'] === true).length;
-    const tasaReingreso   = ingreso.length ? reingresosCount / ingreso.length : 0;
-
-    // Chart servicios — Tipo servicio es array en INGRESO
-    const servicioCount = {};
-    ingreso.forEach(r => {
-      const tipos = Array.isArray(r['Tipo servicio']) ? r['Tipo servicio'] : [r['Tipo servicio']].filter(Boolean);
-      tipos.forEach(t => { servicioCount[t] = (servicioCount[t] || 0) + 1; });
-    });
-    const serviciosSorted = Object.entries(servicioCount).sort((a, b) => b[1] - a[1]);
-
-    // Chart técnicos — desde INGRESO
-    const tecnicoCount = {};
-    ingreso.forEach(r => {
-      const t = r['Técnico asignado'];
-      if (t) tecnicoCount[t] = (tecnicoCount[t] || 0) + 1;
-    });
-    const tecnicosSorted = Object.entries(tecnicoCount).sort((a, b) => b[1] - a[1]);
-
-    // Chart origen
-    const origenCount = {};
-    ingreso.forEach(r => {
-      const o = r['Origen'];
-      if (o) origenCount[o] = (origenCount[o] || 0) + 1;
-    });
-    const origenSorted = Object.entries(origenCount).sort((a, b) => b[1] - a[1]);
-
-    // Chart valor por día
-    const dias = getDaysInRange(filters.fechaInicio, filters.fechaFin);
-    const valorDia = {};
-    dias.forEach(d => { valorDia[d] = 0; });
-    salida.forEach(r => {
-      const ts = r['Timestamp salida'] || r['createdTime'] || '';
-      const fecha = ts ? ts.slice(0, 10) : null;
-      if (fecha && valorDia[fecha] !== undefined) valorDia[fecha] += r['Valor final'] || 0;
-    });
-
-    // Tabla: últimas 20 salidas, técnico desde INGRESO por placa
-    const ingresoByPlaca = {};
-    ingreso.forEach(r => { if (r['Placa']) ingresoByPlaca[(r['Placa'] || '').toUpperCase()] = r; });
-
-    const ultimasSalidas = [...salida]
-      .sort((a, b) => new Date(b['Timestamp salida'] || b.createdTime || 0) - new Date(a['Timestamp salida'] || a.createdTime || 0))
-      .slice(0, 20)
-      .map(r => ({
-      fecha:      (r['Timestamp salida'] || r['createdTime'] || '').slice(0, 10),
-      placa:      r['Placa'] || '—',
-      tecnico:    ingresoByPlaca[(r['Placa'] || '').toUpperCase()]?.['Técnico asignado'] || '—',
-      valorFinal: r['Valor final'] || 0,
-      entrega:    r['Entrega'] || '—',
-      upsell:     r['Upsell cerrado'] === true,
-    }));
-
-    return {
-      kpis: { enTaller: enTaller.length, pendientes24h: pendientes24h.length, entregaTiempo, upsellCerrado, valorFacturado, ticketPromedio, reingresosCount, tasaReingreso, totalIngresos: ingreso.length },
-      servicios:  { labels: serviciosSorted.map(([k]) => k), values: serviciosSorted.map(([, v]) => v) },
-      tecnicos:   { labels: tecnicosSorted.map(([k]) => k),  values: tecnicosSorted.map(([, v]) => v) },
-      origen:     { labels: origenSorted.map(([k]) => k),    values: origenSorted.map(([, v]) => v) },
-      valorPorDia:{ labels: dias, values: dias.map(d => valorDia[d]) },
-      ultimasSalidas,
-    };
-  }
-
-  function getDaysInRange(start, end) {
-    const days = [];
-    const cur = new Date(start);
-    const last = new Date(end);
-    while (cur <= last) {
-      days.push(cur.toISOString().slice(0, 10));
-      cur.setDate(cur.getDate() + 1);
-    }
-    return days;
-  }
-
-  // ── KPIs (Airtable, legado) ──────────────────────────────────────────
-  function renderKPIs(data) {
-    const k = data.kpis;
-    const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
-    const pct = n => Math.round(n * 100) + '%';
-
-    document.getElementById('kpi-enTaller').textContent     = k.enTaller;
-    document.getElementById('kpi-pendientes24h').textContent = k.pendientes24h;
-    document.getElementById('kpi-entregaTiempo').textContent = pct(k.entregaTiempo);
-    document.getElementById('kpi-upsell').textContent       = pct(k.upsellCerrado);
-    document.getElementById('kpi-facturado').textContent    = fmt(k.valorFacturado);
-    document.getElementById('kpi-ticket').textContent       = fmt(k.ticketPromedio);
-    document.getElementById('kpi-reingreso').textContent    = pct(k.tasaReingreso);
-    document.getElementById('kpi-reingreso-sub').textContent = k.reingresosCount + ' de ' + k.totalIngresos + ' ingresos';
-  }
-
-  // ── CHARTS (Airtable, legado) ────────────────────────────────────────
+  // ── CHARTS ─────────────────────────────────────────────────────────────
   const CHART_DEFAULTS = {
     color: '#F0F0F0',
     plugins: {
@@ -1098,101 +736,6 @@ var cstSession = guard(["admin","manager","developer"]);
 
   function destroyChart(id) {
     if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
-  }
-
-  function renderCharts(data) {
-    destroyChart('servicios');
-    destroyChart('tecnicos');
-    destroyChart('origen');
-    destroyChart('valorDia');
-
-    chartInstances.servicios = new Chart(document.getElementById('chartServicios'), {
-      type: 'bar',
-      data: {
-        labels: data.servicios.labels,
-        datasets: [{ data: data.servicios.values, backgroundColor: '#C8102E', borderRadius: 6 }],
-      },
-      options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: true },
-    });
-
-    chartInstances.tecnicos = new Chart(document.getElementById('chartTecnicos'), {
-      type: 'bar',
-      data: {
-        labels: data.tecnicos.labels,
-        datasets: [{ data: data.tecnicos.values, backgroundColor: '#C9A84C', borderRadius: 6 }],
-      },
-      options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: true },
-    });
-
-    chartInstances.origen = new Chart(document.getElementById('chartOrigen'), {
-      type: 'bar',
-      data: {
-        labels: data.origen.labels,
-        datasets: [{ data: data.origen.values, backgroundColor: '#555', borderRadius: 6 }],
-      },
-      options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: true },
-    });
-
-    // Mostrar solo cada 5 días en el eje X para no saturar
-    const labelsFiltrados = data.valorPorDia.labels.map((l, i) => i % 5 === 0 ? l.slice(5) : '');
-
-    chartInstances.valorDia = new Chart(document.getElementById('chartValorDia'), {
-      type: 'bar',
-      data: {
-        labels: labelsFiltrados,
-        datasets: [{
-          data: data.valorPorDia.values,
-          backgroundColor: 'rgba(200,16,46,0.5)',
-          borderColor: '#C8102E',
-          borderWidth: 1,
-          borderRadius: 3,
-        }],
-      },
-      options: {
-        ...CHART_DEFAULTS,
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          ...CHART_DEFAULTS.plugins,
-          tooltip: {
-            ...CHART_DEFAULTS.plugins.tooltip,
-            callbacks: {
-              label: ctx => '$' + ctx.parsed.y.toLocaleString('es-CO'),
-            },
-          },
-        },
-      },
-    });
-  }
-
-  // ── TABLE (Airtable, legado) ─────────────────────────────────────────
-  function renderTable(salidas) {
-    const tbody = document.getElementById('tablaBody');
-    if (!salidas || salidas.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading">Sin registros</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = salidas.map(r => {
-      const retrasada = r.entrega === 'Retrasada';
-      const upsellBadge = r.upsell
-        ? '<span class="badge badge-gold">Sí</span>'
-        : '<span class="badge badge-muted">No</span>';
-      const entregaBadge = retrasada
-        ? '<span class="badge badge-red">Retrasada</span>'
-        : '<span class="badge badge-green">A tiempo</span>';
-      const valor = '$' + Math.round(r.valorFinal).toLocaleString('es-CO');
-      const fecha = r.fecha ? r.fecha.slice(0, 10) : '—';
-
-      return `<tr class="${retrasada ? 'retrasada' : ''}">
-        <td>${fecha}</td>
-        <td><strong>${r.placa}</strong></td>
-        <td>${r.tecnico || '—'}</td>
-        <td>${valor}</td>
-        <td>${entregaBadge}</td>
-        <td>${upsellBadge}</td>
-      </tr>`;
-    }).join('');
   }
 
   // ── VISIÓN GENERAL (Motokontrol / manager) ────────────────────────────
@@ -1501,10 +1044,7 @@ var cstSession = guard(["admin","manager","developer"]);
     periodo = d ? { desde: d, hasta: h } : null;
     document.getElementById('mg-periodo-txt').textContent = periodo
       ? 'Mostrando ' + periodo.desde + ' a ' + periodo.hasta
-      : 'Sin rango: estado actual y mes en curso';
-    document.getElementById('mg-ingresadas-lbl').textContent = periodo ? 'Ingresadas' : 'Ingresadas mes';
-    document.getElementById('mg-entregas-lbl').textContent = periodo ? 'Entregadas' : 'Entregadas mes';
-    document.getElementById('mg-facturado-lbl').textContent = periodo ? 'Facturado · sin IVA' : 'Facturado mes · sin IVA';
+      : 'Sin rango: mes en curso';
     cargarVisionGeneral();
   }
   function periodoRapido(cual){
@@ -1546,13 +1086,14 @@ var cstSession = guard(["admin","manager","developer"]);
     destroyChart('tendencia');
     chartInstances.tendencia = new Chart(document.getElementById('chartTendencia'), {
       data: {
-        labels: m.map(x => etiquetaMes(x.mes)),
+        labels: m.map(x => etiquetaMes(x.mes) + (x.en_curso ? ' (en curso)' : '')),
         datasets: [
           { type: 'bar', label: 'Motos ingresadas', data: m.map(x => x.placas), yAxisID: 'y',
-            backgroundColor: 'rgba(201,168,76,0.45)', borderColor: '#C9A84C', borderWidth: 1, borderRadius: 3, order: 2 },
+            backgroundColor: m.map(x => x.en_curso ? 'rgba(136,136,136,0.25)' : 'rgba(201,168,76,0.45)'),
+            borderColor: m.map(x => x.en_curso ? '#666' : '#C9A84C'), borderWidth: 1, borderRadius: 3, order: 2 },
           { type: 'line', label: 'Ticket promedio', data: m.map(x => x.ticket_promedio), yAxisID: 'y1',
             borderColor: '#F0F0F0', backgroundColor: '#F0F0F0', pointRadius: 3, tension: 0.25, spanGaps: true, order: 1 },
-          { type: 'line', label: 'Meta ticket', data: m.map(() => d.meta_ticket_promedio), yAxisID: 'y1',
+          { type: 'line', label: 'Meta ticket sin IVA', data: m.map(() => d.meta_ticket_promedio), yAxisID: 'y1',
             borderColor: '#C8102E', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, order: 0 },
         ],
       },
@@ -1587,7 +1128,7 @@ var cstSession = guard(["admin","manager","developer"]);
     cont.innerHTML = lista.map(t => {
       const pct = Math.round((t.facturado / max) * 100);
       const part = Math.round((t.facturado / total) * 100);
-      const nps = t.nps_resp ? ('NPS ' + t.nps + ' (' + t.nps_resp + (t.nps_resp === 1 ? ' resp.)' : ' resp.)')) : 'NPS sin respuestas';
+      const nps = t.nps_resp ? (t.pct_promotores + '% promotores · NPS ' + t.nps + ' (' + t.nps_resp + (t.nps_resp === 1 ? ' resp.)' : ' resp.)')) : 'sin encuestas';
       return '<div class="mg-tec-row">' +
         '<div class="mg-tec-head"><span class="nombre">' + escHtml(t.tecnico) + '</span>' +
           '<span class="val">' + fmtPesos(t.facturado) + ' · ' + part + '%</span></div>' +
@@ -1608,8 +1149,8 @@ var cstSession = guard(["admin","manager","developer"]);
         (d.observacion ? '<div class="txt">' + escHtml(d.observacion) + '</div>' : '') + '</div>'
     ).join('');
     cont.innerHTML =
-      '<div class="mg-nps-top"><span class="mg-nps-score">' + n.nps + '</span>' +
-        '<span class="mg-nps-n">' + n.respuestas + ' respuestas</span></div>' +
+      '<div class="mg-nps-top"><span class="mg-nps-score">' + (n.pct_promotores ?? pct(n.promotores)) + '%</span>' +
+        '<span class="mg-nps-n">promotores · NPS estándar ' + n.nps + ' · ' + n.respuestas + ' respuestas</span></div>' +
       '<div class="mg-nps-bar">' +
         '<i style="width:' + pct(n.promotores) + '%;background:#2ECC71"></i>' +
         '<i style="width:' + pct(n.pasivos) + '%;background:#888"></i>' +
@@ -1650,7 +1191,12 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-ingresadas').textContent = r.ingresadas ?? '—';
       document.getElementById('mg-ingresadas-sub').innerHTML = r.ingresadas_placas != null
         ? '<span class="tenue">' + r.ingresadas_placas + ' placas distintas</span>' : '';
+      const per = data.periodo || {};
+      document.getElementById('mg-periodo-kpis').textContent = per.desde
+        ? per.desde + ' a ' + per.hasta + (per.por_defecto ? ' (mes en curso)' : '') : 'mes en curso';
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
+      document.getElementById('mg-ticket-sub').innerHTML = (mg.ticket_promedio != null && data.meta_ticket_promedio)
+        ? '<span class="tenue">' + Math.round(mg.ticket_promedio / data.meta_ticket_promedio * 100) + '% de la meta ' + fmtPesos(data.meta_ticket_promedio) + '</span>' : '';
       document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
       document.getElementById('mg-facturado-sub').innerHTML =
         (mg.facturado_taller_mes != null || mg.facturado_accesorios_mes != null)
@@ -1673,7 +1219,7 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-reingreso-sub').textContent =
         tasaReingreso != null ? (mg.reingresos_confirmados ?? 0) + ' de ' + (mg.ordenes_mes ?? 0) : '';
       document.getElementById('mg-revisar').textContent = data.criticas ?? 0;
-      document.getElementById('mg-revisar-sub').textContent = (data.revisar ?? 0) + ' más por revisar';
+      document.getElementById('mg-revisar-sub').textContent = 'asignar en Motokontrol';
 
       renderServiciosFrecuentes(mg.servicios_frecuentes || []);
       renderCoberturaFacturacion(mg);
@@ -1702,6 +1248,7 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-ingresadas').textContent = '—';
       document.getElementById('mg-ingresadas-sub').innerHTML = '';
       document.getElementById('mg-ticket').textContent = '—';
+      document.getElementById('mg-ticket-sub').innerHTML = '';
       document.getElementById('mg-facturado').textContent = '$—';
       document.getElementById('mg-tiempoTaller').textContent = '—';
       document.getElementById('mg-tiempoTaller-sub').innerHTML = '';
@@ -1721,55 +1268,6 @@ var cstSession = guard(["admin","manager","developer"]);
     }
   }
 
-  // ── VISIBILIDAD SECCION AIRTABLE (por rol) ────────────────────────────
-  function mostrarFuente(cual) {
-    const seccionMk = document.getElementById('motokontrol-section');
-    const seccionAirtable = document.getElementById('airtable-section');
-    const btnMk = document.getElementById('btn-fuente-mk');
-    const btnAt = document.getElementById('btn-fuente-at');
-    if (!seccionAirtable || !seccionMk) return;
-    if (cual === 'airtable') {
-      seccionMk.style.display = 'none';
-      seccionAirtable.style.display = 'block';
-      if (btnMk) btnMk.classList.remove('active');
-      if (btnAt) btnAt.classList.add('active');
-    } else {
-      seccionMk.style.display = 'block';
-      seccionAirtable.style.display = 'none';
-      if (btnMk) btnMk.classList.add('active');
-      if (btnAt) btnAt.classList.remove('active');
-    }
-  }
-
-  /* El enlace al menú solo lo ve developer; los demás roles entran directo a
-     su propio dashboard y no tienen a dónde volver. */
-  (function(){
-    const link = document.getElementById('link-menu');
-    if (link && cstSession && cstSession.rol === 'developer') link.style.display = 'inline-flex';
-  })();
-
-  /* Ícono de ayuda: el hover lo resuelve el CSS; este listener agrega el click
-     (necesario en móvil, donde no hay hover). Uno solo para toda la página. */
-  document.addEventListener('click', function(e){
-    const ico = e.target.closest ? e.target.closest('.info') : null;
-    document.querySelectorAll('.info.abierto').forEach(function(el){
-      if(el !== ico) el.classList.remove('abierto');
-    });
-    if(ico) ico.classList.toggle('abierto');
-  });
-
-  function aplicarVisibilidadFuente() {
-    const rol = cstSession && cstSession.rol;
-    const toggle = document.getElementById('fuente-toggle');
-    if (rol === 'developer') {
-      if (toggle) toggle.style.display = 'block';
-      mostrarFuente('mk');
-    } else {
-      if (toggle) toggle.style.display = 'none';
-      mostrarFuente('mk'); // manager solo ve Motokontrol
-    }
-  }
-
   // ── TOAST ──────────────────────────────────────────────────────────────
   function showToast(msg, isError = false) {
     const t = document.getElementById('toast');
@@ -1783,12 +1281,8 @@ var cstSession = guard(["admin","manager","developer"]);
   Chart.defaults.color = '#888';
   Chart.defaults.font.family = 'Inter, sans-serif';
 
-  aplicarVisibilidadFuente();
-  setDefaultDates();
   updateClock();
   setInterval(updateClock, 60000);
-  setInterval(loadData, 300000);
-  loadData();
   /* Texto libre de Motokontrol: se escapa antes de inyectarlo en tablas. */
   function escHtml(v){
     return String(v == null ? '' : v)
@@ -1799,87 +1293,6 @@ var cstSession = guard(["admin","manager","developer"]);
   cargarVisionGeneral();
   setInterval(cargarVisionGeneral, 3600000);
 
-  // ── PANEL CHAT ─────────────────────────────────────────────────────────
-  const PANEL_SYSTEM = 'Eres el asistente operativo del taller CST Royal Enfield Zona T. Tienes acceso a datos del taller. Responde preguntas sobre motos en taller, tiempos, técnicos, upsell y facturación. Sé directo y usa números cuando los tengas. Responde en el idioma en que te escriban.';
-  let panelHistory = [];
-  let panelOpen = false;
-
-  function toggleChat() {
-    panelOpen = !panelOpen;
-    const panel = document.getElementById('chatPanel');
-    panel.style.display = panelOpen ? 'flex' : 'none';
-    if (panelOpen) document.getElementById('panelChatInput').focus();
-  }
-
-  function addPanelMsg(text, role) {
-    const empty = document.getElementById('panelChatEmpty');
-    if (empty) empty.remove();
-    const h = document.getElementById('panelChatHistory');
-    const d = document.createElement('div');
-    d.style.cssText = `display:flex;flex-direction:column;gap:3px;max-width:85%;align-self:${role==='user'?'flex-end':'flex-start'}`;
-    d.innerHTML = `<span style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;padding:0 3px">${role==='user'?'Tú':'IA'}</span><div style="padding:8px 12px;border-radius:${role==='user'?'10px 10px 2px 10px':'10px 10px 10px 2px'};font-size:12px;line-height:1.4;background:${role==='user'?'#C8102E':'#2E2E2E'};color:${role==='user'?'white':'#F0F0F0'}">${text.replace(/\n/g,'<br>')}</div>`;
-    h.appendChild(d);
-    h.scrollTop = h.scrollHeight;
-    return d;
-  }
-
-  async function sendPanelChat() {
-    const input = document.getElementById('panelChatInput');
-    const msg = input.value.trim();
-    if (!msg) return;
-    addPanelMsg(msg, 'user');
-    input.value = '';
-    panelHistory.push({ role: 'user', content: msg });
-    const thinking = addPanelMsg('...', 'assistant');
-    try {
-      const res = await authFetch(`${WORKER_URL}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: panelHistory,
-          context: {
-            total_ingresos: dashboardData.rawContext?.total_ingresos,
-            total_salidas: dashboardData.rawContext?.total_salidas,
-            motos_en_taller: dashboardData.rawContext?.motos_en_taller_ahora,
-            pendientes_24h: dashboardData.rawContext?.motos_pendientes_mas_24h,
-            clientes_nuevos: dashboardData.rawContext?.clientes_nuevos,
-            clientes_recurrentes: dashboardData.rawContext?.clientes_recurrentes,
-            tasa_entrega: dashboardData.rawContext?.tasa_entrega_tiempo,
-            tasa_upsell: dashboardData.rawContext?.tasa_upsell_cerrado,
-            valor_facturado: dashboardData.rawContext?.valor_facturado_total,
-            ticket_promedio: dashboardData.rawContext?.ticket_promedio,
-            servicios_frecuentes: dashboardData.rawContext?.servicios_frecuentes,
-            motos_por_tecnico: dashboardData.rawContext?.motos_por_tecnico,
-            facturacion_por_tecnico: dashboardData.rawContext?.facturacion_por_tecnico,
-            origen_clientes: dashboardData.rawContext?.origen_clientes,
-            upsells_cerrados: dashboardData.rawContext?.upsells_cerrados,
-            motos_en_taller_detalle: dashboardData.rawContext?.motos_en_taller_detalle,
-            retrasos_por_tecnico: dashboardData.rawContext?.retrasos_por_tecnico
-          }
-        }),
-      });
-      thinking.remove();
-      const data = await res.json();
-      console.log('Chat worker response:', JSON.stringify(data));
-      const reply = data.text || data.content?.[0]?.text || data.reply || 'Sin respuesta';
-      const esRateLimit = reply.toLowerCase().includes('rate limit') || reply.toLowerCase().includes('limit reached');
-      const esCredito = reply.toLowerCase().includes('quota') || reply.toLowerCase().includes('billing');
-      let mensajeFinal;
-      if (esRateLimit) {
-        mensajeFinal = 'Demasiadas consultas seguidas. Espera 10 segundos e intenta de nuevo.';
-      } else if (esCredito) {
-        mensajeFinal = 'Límite del plan alcanzado. Intenta en unos minutos.';
-      } else {
-        mensajeFinal = reply;
-      }
-      panelHistory.push({ role: 'assistant', content: mensajeFinal });
-      addPanelMsg(mensajeFinal, 'assistant');
-    } catch {
-      thinking.remove();
-      addPanelMsg('Error al conectar. Intenta de nuevo.', 'assistant');
-      panelHistory.pop();
-    }
-  }
 </script>
 </body>
 </html>

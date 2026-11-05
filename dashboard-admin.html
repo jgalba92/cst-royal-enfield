@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
 <script src="page-info.js?v=1"></script>
-<script src="sidebar.js?v=2"></script>
+<script src="sidebar.js?v=3"></script>
 <title>CST · Rendimiento del equipo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -171,7 +171,7 @@
       <button type="button" class="btn-periodo" id="btn-aplicar">Aplicar</button>
       <button type="button" class="btn-periodo" id="btn-mes">Este mes</button>
       <button type="button" class="btn-periodo" id="btn-limpiar">Limpiar</button>
-      <span class="periodo-txt" id="periodo-txt">Sin rango: todo lo abierto hoy</span>
+      <span class="periodo-txt" id="periodo-txt">Sin rango: la tabla muestra todo lo abierto hoy</span>
     </div>
 
     <div class="seg" role="group" aria-label="Colombiana de Comercio">
@@ -180,11 +180,11 @@
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="label">En taller<span class="info" tabindex="0" data-info="Total de motos que están en el taller ahora mismo (sin entregar).">i</span></div><div class="val" id="kpi-entaller">—</div></div>
-      <div class="kpi"><div class="label">Trabajando<span class="info" tabindex="0" data-info="Motos que se están reparando en este momento.">i</span></div><div class="val" id="kpi-trabajando">—</div></div>
-      <div class="kpi"><div class="label">Por entregar<span class="info" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja.">i</span></div><div class="val" id="kpi-terminadas">—</div></div>
+      <div class="kpi"><div class="label">En taller hoy<span class="info" tabindex="0" data-info="Motos abiertas ahora mismo, sin importar cuándo entraron. No cambia con el filtro de fechas.">i</span></div><div class="val" id="kpi-entaller">—</div></div>
+      <div class="kpi"><div class="label">Trabajando hoy<span class="info" tabindex="0" data-info="Motos que se están reparando en este momento.">i</span></div><div class="val" id="kpi-trabajando">—</div></div>
+      <div class="kpi"><div class="label">Por entregar hoy<span class="info" tabindex="0" data-info="Motos terminadas esperando que el cliente las recoja.">i</span></div><div class="val" id="kpi-terminadas">—</div></div>
       <div class="kpi"><div class="label">Colombiana de Comercio<span class="info der" tabindex="0" data-info="Motos de Corbeta (importador de Royal Enfield) abiertas en el taller. Tardan en pagar y cerrar tickets, por eso se muestran aparte.">i</span></div><div class="val" id="kpi-corbeta">—</div><div class="sub" id="kpi-corbeta-sub"></div></div>
-      <div class="kpi bad"><div class="label">Críticas<span class="info der" tabindex="0" data-info="Órdenes con algo inusual que conviene revisar en Motokontrol.">i</span></div><div class="val" id="kpi-criticas">—</div></div>
+      <div class="kpi bad"><div class="label">Sin técnico<span class="info der" tabindex="0" data-info="Órdenes abiertas hoy con el técnico genérico de Motokontrol. Hay que asignarlas.">i</span></div><div class="val" id="kpi-criticas">—</div></div>
     </div>
 
     <h2>Carga por técnico<span class="info" tabindex="0" data-info="Cuántas motos tiene cada técnico: en reparación (morado) y ya terminadas (verde).">i</span></h2>
@@ -413,6 +413,7 @@ function filtrarYOrdenar(){
     .filter(o => !estadoSel || o.estado === estadoSel)
     .filter(o => !inconsistenciaSel || clasificarInconsistencia(o) === inconsistenciaSel)
     .filter(o => !antiguedadSel || (o.dias_en_taller ?? 0) > antiguedadSel)
+    .filter(o => !periodo || (String(o.fecha_ingreso || '').slice(0, 10) >= periodo.desde && String(o.fecha_ingreso || '').slice(0, 10) <= periodo.hasta))
     .slice()
     .sort((a,b) => (b.dias_en_taller ?? -1) - (a.dias_en_taller ?? -1));
 }
@@ -529,8 +530,8 @@ document.getElementById("btn-exportar").addEventListener("click", exportarCSV);
    desde el Worker porque los conteos se calculan allá. */
 let incluirCorbeta = false;
 
-/* Período por fecha de ingreso: lo aplica el Worker, así KPIs, carga por
-   técnico y tabla quedan en el mismo rango. */
+/* Período por fecha de ingreso: solo filtra la tabla. Los KPIs y la carga por
+   técnico son la foto de hoy y no cambian con las fechas. */
 let periodo = null;
 function aplicarPeriodo(){
   const d = document.getElementById("filtro-desde").value;
@@ -539,9 +540,9 @@ function aplicarPeriodo(){
   if(d && d > h){ alert("La fecha desde no puede ser posterior a hasta"); return; }
   periodo = d ? { desde: d, hasta: h } : null;
   document.getElementById("periodo-txt").textContent = periodo
-    ? "Órdenes abiertas que ingresaron entre " + periodo.desde + " y " + periodo.hasta
-    : "Sin rango: todo lo abierto hoy";
-  cargarTallerEstado();
+    ? "Tabla: abiertas que ingresaron entre " + periodo.desde + " y " + periodo.hasta
+    : "Sin rango: la tabla muestra todo lo abierto hoy";
+  renderTabla();
 }
 function periodoRapido(mes){
   const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
@@ -555,7 +556,6 @@ document.getElementById("btn-limpiar").addEventListener("click", () => periodoRa
 function paramsTaller(){
   const p = new URLSearchParams();
   if(incluirCorbeta) p.set("corbeta", "incluir");
-  if(periodo){ p.set("desde", periodo.desde); p.set("hasta", periodo.hasta); }
   const q = p.toString();
   return q ? "?" + q : "";
 }

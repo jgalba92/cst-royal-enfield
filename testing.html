@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="auth.js?v=3"></script>
-<script src="sidebar.js?v=2"></script>
+<script src="sidebar.js?v=3"></script>
 <title>CST · Testing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -123,7 +123,7 @@
   <!-- CLIENTE -->
   <section class="panel" id="p-cliente">
     <div class="kpis">
-      <div class="kpi"><div class="l">NPS del período</div><div class="v oro" id="c-nps">—</div><div class="s" id="c-nps-s"></div></div>
+      <div class="kpi"><div class="l">% promotores</div><div class="v oro" id="c-nps">—</div><div class="s" id="c-nps-s"></div></div>
       <div class="kpi"><div class="l">Motos atendidas</div><div class="v" id="c-placas">—</div><div class="s">placas distintas</div></div>
       <div class="kpi"><div class="l">Clientes recurrentes</div><div class="v" id="c-rec">—</div><div class="s" id="c-rec-s"></div></div>
     </div>
@@ -141,7 +141,7 @@
   <!-- POSVENTA -->
   <section class="panel" id="p-posventa">
     <div class="kpis">
-      <div class="kpi"><div class="l">Motos ingresadas</div><div class="v oro" id="pv-ing">—</div><div class="s" id="pv-ing-s"></div></div>
+      <div class="kpi"><div class="l">Motos atendidas</div><div class="v oro" id="pv-ing">—</div><div class="s" id="pv-ing-s"></div></div>
       <div class="kpi"><div class="l">Ticket promedio · sin IVA</div><div class="v" id="pv-ticket">—</div><div class="s" id="pv-ticket-s"></div></div>
       <div class="kpi"><div class="l">Facturado taller · sin IVA</div><div class="v" id="pv-fact">—</div><div class="s" id="pv-fact-s"></div></div>
       <div class="kpi"><div class="l">Reingresos</div><div class="v" id="pv-reing">—</div><div class="s">marcados "retorno taller"</div></div>
@@ -151,7 +151,7 @@
       <h2>Por técnico</h2>
       <div class="tabla-scroll">
         <table>
-          <thead><tr><th>Técnico</th><th class="num">Órdenes</th><th class="num">Tickets fact.</th><th class="num">Facturado</th><th class="num">Part.</th><th class="num">NPS</th><th class="num">Reingresos</th></tr></thead>
+          <thead><tr><th>Técnico</th><th class="num">Órdenes</th><th class="num">Tickets fact.</th><th class="num">Facturado</th><th class="num">Part.</th><th class="num">% prom. · NPS</th><th class="num">Reingresos</th></tr></thead>
           <tbody id="pv-tec"><tr><td colspan="7" class="vacio">Cargando…</td></tr></tbody>
         </table>
       </div>
@@ -165,6 +165,8 @@ const session = guard(["developer"]);
 
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const etq = m => MESES[Number(m.slice(5,7)) - 1] + ' ' + m.slice(2,4);
+/* Etiqueta de un mes de d.mensual: el mes en curso se marca porque aún no cierra. */
+const etqM = x => etq(x.mes) + (x.en_curso ? ' (en curso)' : '');
 const pesos = n => n == null ? '—' : '$' + Math.round(n).toLocaleString('es-CO');
 const millones = n => n == null ? '—' : '$' + (n / 1e6).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + 'M';
 const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -204,12 +206,12 @@ function renderVentas(d){
   document.getElementById('v-online').textContent = millones(online);
   document.getElementById('v-online-s').textContent = onlineN + ' facturas FV-5';
   document.getElementById('v-taller').textContent = millones(sum(m, 'facturado_taller'));
-  chart('c-motos', { data: { labels: m.map(x => etq(x.mes)), datasets: [
+  chart('c-motos', { data: { labels: m.map(etqM), datasets: [
       { type: 'bar', label: 'Motos (facturas)', data: m.map(x => x.motos_n), backgroundColor: 'rgba(201,168,76,.5)', borderColor: ORO, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
       { type: 'line', label: 'Valor', data: m.map(x => x.motos), borderColor: '#fff', pointRadius: 3, tension: .25, yAxisID: 'y1' },
     ] }, options: { scales: ejes({ y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { color: TXT, callback: v => millones(v) } } }),
       plugins: { tooltip: { callbacks: { label: c => c.dataset.yAxisID === 'y1' ? 'Valor: ' + pesos(c.parsed.y) : c.dataset.label + ': ' + c.parsed.y } } } } });
-  chart('c-lineas', { type: 'bar', data: { labels: m.map(x => etq(x.mes)), datasets: [
+  chart('c-lineas', { type: 'bar', data: { labels: m.map(etqM), datasets: [
       { label: 'Taller', data: m.map(x => x.facturado_taller), backgroundColor: 'rgba(201,168,76,.55)', borderRadius: 3 },
       { label: 'Venta online', data: m.map(x => x.venta_online), backgroundColor: 'rgba(167,167,167,.55)', borderRadius: 3 },
     ] }, options: { scales: ejes({ y: { beginAtZero: true, grid: { color: GRID }, ticks: { color: TXT, callback: v => millones(v) } } }),
@@ -218,15 +220,17 @@ function renderVentas(d){
 
 function renderCliente(d){
   const n = d.nps, m = d.mensual;
-  document.getElementById('c-nps').textContent = n.nps == null ? '—' : n.nps;
-  document.getElementById('c-nps-s').textContent = n.respuestas + ' respuestas';
+  // Cifra principal: promotores sobre encuestas. El NPS estándar va debajo.
+  document.getElementById('c-nps').textContent = n.pct_promotores == null ? '—' : n.pct_promotores + '%';
+  document.getElementById('c-nps-s').textContent = n.respuestas + ' encuestas · NPS estándar ' + (n.nps == null ? '—' : n.nps);
   document.getElementById('c-placas').textContent = d.clientes.placas.toLocaleString('es-CO');
   const pr = d.clientes.placas ? Math.round(d.clientes.recurrentes / d.clientes.placas * 100) : 0;
   document.getElementById('c-rec').textContent = pr + '%';
   document.getElementById('c-rec-s').textContent = d.clientes.recurrentes + ' placas con 2+ órdenes';
-  chart('c-npsmes', { data: { labels: m.map(x => etq(x.mes)), datasets: [
+  chart('c-npsmes', { data: { labels: m.map(etqM), datasets: [
       { type: 'bar', label: 'Respuestas', data: m.map(x => x.nps_resp), backgroundColor: 'rgba(167,167,167,.35)', borderRadius: 3, yAxisID: 'y1' },
-      { type: 'line', label: 'NPS', data: m.map(x => x.nps), borderColor: ORO, backgroundColor: ORO, pointRadius: 3, tension: .25, spanGaps: true, yAxisID: 'y' },
+      { type: 'line', label: '% promotores', data: m.map(x => x.pct_promotores), borderColor: ORO, backgroundColor: ORO, pointRadius: 3, tension: .25, spanGaps: true, yAxisID: 'y' },
+      { type: 'line', label: 'NPS estándar', data: m.map(x => x.nps), borderColor: '#fff', backgroundColor: '#fff', pointRadius: 2, borderWidth: 1.5, borderDash: [4, 3], tension: .25, spanGaps: true, yAxisID: 'y' },
     ] }, options: { scales: ejes({ y: { min: -100, max: 100, grid: { color: GRID }, ticks: { color: TXT } },
       y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { color: TXT } } }) } });
   const dist = document.getElementById('c-dist');
@@ -251,17 +255,19 @@ function renderPosventa(d){
   const m = d.mensual;
   const tickets = sum(m, 'tickets_facturados');
   const tp = tickets ? m.reduce((a, x) => a + (x.ticket_promedio || 0) * (x.tickets_facturados || 0), 0) / tickets : null;
-  document.getElementById('pv-ing').textContent = sum(m, 'placas').toLocaleString('es-CO');
-  document.getElementById('pv-ing-s').textContent = sum(m, 'ordenes').toLocaleString('es-CO') + ' órdenes';
+  // Placas distintas del período completo (no la suma por mes, que cuenta dos
+  // veces a quien vuelve).
+  document.getElementById('pv-ing').textContent = (d.clientes.placas ?? 0).toLocaleString('es-CO');
+  document.getElementById('pv-ing-s').textContent = 'placas distintas · ' + sum(m, 'ordenes').toLocaleString('es-CO') + ' órdenes';
   document.getElementById('pv-ticket').textContent = pesos(tp);
-  document.getElementById('pv-ticket-s').textContent = tp ? 'meta ' + pesos(d.meta_ticket_promedio) + ' · ' + Math.round(tp / d.meta_ticket_promedio * 100) + '%' : '';
+  document.getElementById('pv-ticket-s').textContent = tp ? 'meta sin IVA ' + pesos(d.meta_ticket_promedio) + ' · ' + Math.round(tp / d.meta_ticket_promedio * 100) + '%' : '';
   document.getElementById('pv-fact').textContent = millones(sum(m, 'facturado_taller'));
   document.getElementById('pv-fact-s').textContent = tickets + ' tickets facturados';
   document.getElementById('pv-reing').textContent = sum(m, 'reingresos');
-  chart('c-pv', { data: { labels: m.map(x => etq(x.mes)), datasets: [
+  chart('c-pv', { data: { labels: m.map(etqM), datasets: [
       { type: 'bar', label: 'Motos ingresadas', data: m.map(x => x.placas), backgroundColor: 'rgba(201,168,76,.45)', borderColor: ORO, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
       { type: 'line', label: 'Ticket promedio', data: m.map(x => x.ticket_promedio), borderColor: '#fff', pointRadius: 3, tension: .25, spanGaps: true, yAxisID: 'y1' },
-      { type: 'line', label: 'Meta', data: m.map(() => d.meta_ticket_promedio), borderColor: '#FF4D4D', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, yAxisID: 'y1' },
+      { type: 'line', label: 'Meta sin IVA', data: m.map(() => d.meta_ticket_promedio), borderColor: '#FF4D4D', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, yAxisID: 'y1' },
     ] }, options: { scales: ejes({ y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { color: TXT, callback: v => millones(v) } } }),
       plugins: { tooltip: { callbacks: { label: c => c.dataset.yAxisID === 'y1' ? c.dataset.label + ': ' + pesos(c.parsed.y) : c.dataset.label + ': ' + c.parsed.y } } } } });
   const t = d.por_tecnico || [];
@@ -269,7 +275,7 @@ function renderPosventa(d){
   document.getElementById('pv-tec').innerHTML = t.length ? t.map(x =>
     '<tr><td>' + esc(x.tecnico) + '</td><td class="num">' + x.ordenes + '</td><td class="num">' + x.tickets_facturados +
     '</td><td class="num">' + pesos(x.facturado) + '</td><td class="num">' + Math.round(x.facturado / total * 100) + '%</td>' +
-    '<td class="num">' + (x.nps_resp ? x.nps + ' (' + x.nps_resp + ')' : '—') + '</td><td class="num">' + x.reingresos + '</td></tr>'
+    '<td class="num">' + (x.nps_resp ? x.pct_promotores + '% · ' + x.nps + ' (' + x.nps_resp + ')' : '—') + '</td><td class="num">' + x.reingresos + '</td></tr>'
   ).join('') : '<tr><td colspan="7" class="vacio">Sin datos en el período</td></tr>';
 }
 
