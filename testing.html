@@ -275,7 +275,7 @@ function renderPosventa(d){
   document.getElementById('pv-tec').innerHTML = t.length ? t.map(x =>
     '<tr><td>' + esc(x.tecnico) + '</td><td class="num">' + x.ordenes + '</td><td class="num">' + x.tickets_facturados +
     '</td><td class="num">' + pesos(x.facturado) + '</td><td class="num">' + Math.round(x.facturado / total * 100) + '%</td>' +
-    '<td class="num">' + (x.nps_resp ? x.pct_promotores + '% · ' + x.nps + ' (' + x.nps_resp + ')' : '—') + '</td><td class="num">' + x.reingresos + '</td></tr>'
+    '<td class="num">' + (x.nps_resp ? (x.pct_promotores != null ? x.pct_promotores + '% · ' : '') + x.nps + ' (' + x.nps_resp + ')' : '—') + '</td><td class="num">' + x.reingresos + '</td></tr>'
   ).join('') : '<tr><td colspan="7" class="vacio">Sin datos en el período</td></tr>';
 }
 

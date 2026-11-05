@@ -1128,7 +1128,7 @@ var cstSession = guard(["admin","manager","developer"]);
     cont.innerHTML = lista.map(t => {
       const pct = Math.round((t.facturado / max) * 100);
       const part = Math.round((t.facturado / total) * 100);
-      const nps = t.nps_resp ? (t.pct_promotores + '% promotores · NPS ' + t.nps + ' (' + t.nps_resp + (t.nps_resp === 1 ? ' resp.)' : ' resp.)')) : 'sin encuestas';
+      const nps = t.nps_resp ? ((t.pct_promotores != null ? t.pct_promotores + '% promotores · ' : '') + 'NPS ' + t.nps + ' (' + t.nps_resp + (t.nps_resp === 1 ? ' resp.)' : ' resp.)')) : 'sin encuestas';
       return '<div class="mg-tec-row">' +
         '<div class="mg-tec-head"><span class="nombre">' + escHtml(t.tecnico) + '</span>' +
           '<span class="val">' + fmtPesos(t.facturado) + ' · ' + part + '%</span></div>' +
