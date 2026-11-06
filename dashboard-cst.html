@@ -551,7 +551,7 @@ var cstSession = guard(["admin","manager","developer"]);
         <div class="kpi-sub" id="mg-ticket-sub"></div>
       </div>
       <div class="card">
-        <div class="kpi-label">Facturado · sin IVA<span class="info" tabindex="0" data-info="Valor sin IVA, igual que el reporte de Siigo. Suma taller (FV-3) y venta online (FV-5); debajo va cada uno por separado. No incluye venta de motos.">i</span></div>
+        <div class="kpi-label">Facturado taller · sin IVA<span class="info" tabindex="0" data-info="Facturas de taller (FV-3) del período menos sus notas crédito, sin IVA. Es el mismo número que el centro de costo &quot;CST - Taller&quot; en el reporte Ventas por centro de costo de Siigo. Debajo, la venta online (centro de costo T-commerce, FV-5). No incluye venta de motos.">i</span></div>
         <div class="kpi-value" id="mg-facturado">$—</div>
         <div class="kpi-sub" id="mg-facturado-sub"></div>
       </div>
@@ -1197,12 +1197,12 @@ var cstSession = guard(["admin","manager","developer"]);
       document.getElementById('mg-ticket').textContent = mg.ticket_promedio != null ? fmtPesos(mg.ticket_promedio) : '—';
       document.getElementById('mg-ticket-sub').innerHTML = (mg.ticket_promedio != null && data.meta_ticket_promedio)
         ? '<span class="tenue">' + Math.round(mg.ticket_promedio / data.meta_ticket_promedio * 100) + '% de la meta ' + fmtPesos(data.meta_ticket_promedio) + '</span>' : '';
-      document.getElementById('mg-facturado').textContent = mg.facturado_mes != null ? fmtPesos(mg.facturado_mes) : '$—';
-      document.getElementById('mg-facturado-sub').innerHTML =
-        (mg.facturado_taller_mes != null || mg.facturado_accesorios_mes != null)
-          ? '<span class="tenue">Taller: ' + fmtPesos(mg.facturado_taller_mes ?? 0) +
-            ' · Venta online: ' + fmtPesos(mg.facturado_accesorios_mes ?? 0) + '</span>'
-          : '<span class="tenue">Siigo</span>';
+      // Taller va solo para que cuadre con el centro de costo "CST - Taller" de
+      // Siigo; la venta online (T-commerce) va debajo. Ambos netos de notas crédito.
+      document.getElementById('mg-facturado').textContent = mg.facturado_taller_mes != null ? fmtPesos(mg.facturado_taller_mes) : '$—';
+      document.getElementById('mg-facturado-sub').innerHTML = mg.facturado_accesorios_mes != null
+        ? '<span class="tenue">Neto de notas crédito · Venta online: ' + fmtPesos(mg.facturado_accesorios_mes) + '</span>'
+        : '<span class="tenue">Siigo</span>';
       // fmtDuracion espera {promedio_dias, promedio_horas}, que es justo la
       // forma de tiempo_promedio_taller.
       const tiempoTaller = mg.tiempo_promedio_taller || {};
